@@ -8,6 +8,7 @@ const navLinks = [
   { name: 'About', href: '/about' },
   { name: 'Resume', href: '/resume' },
   { name: 'Life', href: '/life' },
+  { name: '🐾 Pet', href: '/pet' },
 ];
 
 export function Header() {
