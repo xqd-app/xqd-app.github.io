@@ -149,6 +149,20 @@ export function Resume() {
                 </div>
               </div>
             </div>
+
+            <div className="mt-8">
+              <h2 className="text-xl font-semibold mb-6 uppercase tracking-wider">技能证书 / Certifications</h2>
+              <a
+                href="/certificates"
+                className="inline-flex items-center gap-3 px-6 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all duration-300 shadow-lg hover:shadow-xl"
+              >
+                <span className="text-2xl">📜</span>
+                <div className="text-left">
+                  <div className="font-semibold">查看技能证书</div>
+                  <div className="text-sm opacity-80">View Certifications</div>
+                </div>
+              </a>
+            </div>
           </div>
         </div>
       </section>

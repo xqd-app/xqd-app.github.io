@@ -10,6 +10,7 @@ import Life from "@/pages/Life";
 import PhotoDetail from "@/pages/PhotoDetail";
 import Upload from "@/pages/Upload";
 import { Pet } from "@/pages/Pet";
+import { Certificates } from "@/pages/Certificates";
 
 export default function App() {
   return (
@@ -22,6 +23,7 @@ export default function App() {
             <Route path="/showcase" element={<Showcase />} />
             <Route path="/about" element={<About />} />
             <Route path="/resume" element={<Resume />} />
+            <Route path="/certificates" element={<Certificates />} />
             <Route path="/life" element={<Life />} />
             <Route path="/photo/:id" element={<PhotoDetail />} />
             <Route path="/upload" element={<Upload />} />
