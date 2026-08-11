@@ -73,7 +73,7 @@ function FoxModel({ interactionState, isHovered, foxTarget }: {
       const idle = actionsRef.current['Idle'] || actionsRef.current['Fox_Idle'] || Object.values(actionsRef.current)[0];
       if (idle) {
         idle.reset().play();
-        currentActionRef.current = idle.name;
+        currentActionRef.current = (Object.keys(actionsRef.current).find(k => actionsRef.current[k] === idle)) || '';
       }
     }
     return () => {
