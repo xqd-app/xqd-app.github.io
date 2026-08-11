@@ -29,6 +29,30 @@
       "destination": "/$1"
     },
     {
+      "source": "/(.*\\.webp)",
+      "destination": "/$1"
+    },
+    {
+      "source": "/(.*\\.glb)",
+      "destination": "/$1"
+    },
+    {
+      "source": "/(.*\\.gltf)",
+      "destination": "/$1"
+    },
+    {
+      "source": "/(.*\\.fbx)",
+      "destination": "/$1"
+    },
+    {
+      "source": "/(.*\\.mp4)",
+      "destination": "/$1"
+    },
+    {
+      "source": "/(.*\\.webm)",
+      "destination": "/$1"
+    },
+    {
       "source": "/(.*)",
       "destination": "/"
     }
