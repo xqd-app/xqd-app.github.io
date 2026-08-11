@@ -9,36 +9,36 @@ export function Hero() {
       <div className={`absolute inset-0 bg-gradient-to-b ${theme === 'dark' ? 'from-gray-900 via-gray-900/95 to-gray-900' : 'from-white via-white/95 to-white'}`} />
       
       <div className="relative z-10 text-center">
-        <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight mb-6 animate-fade-in">
+        <h1 className={`text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight mb-6 animate-fade-in ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
           Xing Qide
         </h1>
-        <p className="text-xl md:text-2xl lg:text-3xl text-gray-600 font-light tracking-wide max-w-2xl mx-auto mb-12">
+        <p className={`text-xl md:text-2xl lg:text-3xl font-light tracking-wide max-w-2xl mx-auto mb-12 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
           Data Analyst & Programmer
         </p>
         
         <div className="flex flex-wrap justify-center gap-4 md:gap-8 mb-16">
-          <span className="px-4 py-2 border border-gray-300 rounded-full text-sm uppercase tracking-wider">BRAND DESIGN</span>
-          <span className="px-4 py-2 border border-gray-300 rounded-full text-sm uppercase tracking-wider">UX/UI</span>
-          <span className="px-4 py-2 border border-gray-300 rounded-full text-sm uppercase tracking-wider">WEB DESIGN</span>
-          <span className="px-4 py-2 border border-gray-300 rounded-full text-sm uppercase tracking-wider">ILLUSTRATION</span>
+          <span className={`px-4 py-2 border rounded-full text-sm uppercase tracking-wider ${theme === 'dark' ? 'border-gray-600 text-gray-300' : 'border-gray-300 text-gray-700'}`}>BRAND DESIGN</span>
+          <span className={`px-4 py-2 border rounded-full text-sm uppercase tracking-wider ${theme === 'dark' ? 'border-gray-600 text-gray-300' : 'border-gray-300 text-gray-700'}`}>UX/UI</span>
+          <span className={`px-4 py-2 border rounded-full text-sm uppercase tracking-wider ${theme === 'dark' ? 'border-gray-600 text-gray-300' : 'border-gray-300 text-gray-700'}`}>WEB DESIGN</span>
+          <span className={`px-4 py-2 border rounded-full text-sm uppercase tracking-wider ${theme === 'dark' ? 'border-gray-600 text-gray-300' : 'border-gray-300 text-gray-700'}`}>ILLUSTRATION</span>
         </div>
         
         <a
           href="#work"
           className="inline-flex flex-col items-center group"
         >
-          <span className="text-xs uppercase tracking-widest mb-4 text-gray-500 group-hover:text-purple-600 transition-colors">
+          <span className={`text-xs uppercase tracking-widest mb-4 transition-colors ${theme === 'dark' ? 'text-gray-400 group-hover:text-purple-400' : 'text-gray-500 group-hover:text-purple-600'}`}>
             View Work
           </span>
           <ArrowDown 
             size={24} 
-            className="text-gray-400 animate-bounce group-hover:text-purple-600 transition-colors" 
+            className={`animate-bounce transition-colors ${theme === 'dark' ? 'text-gray-500 group-hover:text-purple-400' : 'text-gray-400 group-hover:text-purple-600'}`} 
           />
         </a>
       </div>
 
       <svg
-        className="absolute bottom-20 right-10 w-24 h-24 opacity-30 animate-float text-gray-400"
+        className={`absolute bottom-20 right-10 w-24 h-24 opacity-30 animate-float ${theme === 'dark' ? 'text-gray-300' : 'text-gray-500'}`}
         viewBox="0 0 100 100"
         fill="currentColor"
       >

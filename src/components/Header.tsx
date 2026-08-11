@@ -7,6 +7,7 @@ const navLinks = [
   { name: 'Work', href: '/showcase' },
   { name: 'About', href: '/about' },
   { name: 'Resume', href: '/resume' },
+  { name: 'Teacher', href: '/teacher' },
   { name: 'Life', href: '/life' },
   { name: '🐾 Pet', href: '/pet' },
 ];
@@ -39,10 +40,7 @@ export function Header() {
           <a href="/" className={cn(
             'text-2xl font-bold tracking-tight transition-colors',
             theme === 'dark' ? 'hover:text-purple-400' : 'hover:text-purple-600'
-          )}>
-            Xing Qide
-          </a>
-
+          )}>Xing Qide</a>
           <div className="flex items-center space-x-8">
             <div className="hidden md:flex items-center space-x-8">
               {navLinks.map((link) => (
@@ -71,7 +69,7 @@ export function Header() {
               )}
               aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
             >
-              {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+              {theme === 'dark' ? <Moon size={20} /> : <Sun size={20} />}
             </button>
 
             <button

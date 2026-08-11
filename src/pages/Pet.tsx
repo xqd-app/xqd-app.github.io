@@ -1,25 +1,12 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
-
-// CSS animations
-const style = document.createElement('style');
-style.textContent = `
-  @keyframes blink {
-    0%, 45%, 55%, 100% { opacity: 1; }
-    50% { opacity: 0; }
-  }
-  @keyframes wave {
-    0%, 100% { transform: rotate(0deg); }
-    25% { transform: rotate(20deg); }
-    75% { transform: rotate(-20deg); }
-  }
-`;
-if (typeof document !== 'undefined') {
-  document.head.appendChild(style);
-}
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { useGLTF } from '@react-three/drei';
+import * as THREE from 'three';
 import { AIMessage, AIConfig, DEFAULT_SYSTEM_PROMPT, sendAIMessage } from '@/lib/ai-service';
 import { AIChat } from '@/components/AIChat';
-import { MessageCircle } from 'lucide-react';
+
+useGLTF.preload('/models/Fox.glb');
 
 interface PetState {
   name: string;
@@ -31,137 +18,267 @@ interface PetState {
   totalInteractions: number;
 }
 
-const PetAvatar = ({ mood, isAnimating, isSpeaking, isWaving, isDancing, danceStep }: { mood: string; isAnimating: boolean; isSpeaking?: boolean; isWaving?: boolean; isDancing?: boolean; danceStep?: number }) => {
-  // Add dancing class for animation - entire body jumps
-  const getDanceTransform = () => {
-    if (!isDancing) return '';
-    
-    const transforms = [
-      'translateY(0px)',
-      'translateY(-15px) rotate(-8deg)',
-      'translateY(0px)',
-      'translateY(-15px) rotate(8deg)',
-      'translateY(0px)',
-      'translateY(-25px) rotate(-5deg)',
-      'translateY(0px)',
-      'translateY(-12px) rotate(5deg)',
-    ];
-    
-    return transforms[danceStep || 0];
+type FoxMood = 'happy' | 'excited' | 'sad' | 'neutral';
+
+function FoxModel({ mood, isSpeaking, isDancing }: {
+  mood: FoxMood;
+  isSpeaking: boolean;
+  isDancing: boolean;
+}) {
+  const modelRef = useRef<THREE.Group>(null);
+  const mixerRef = useRef<THREE.AnimationMixer | null>(null);
+  const actionsRef = useRef<Record<string, THREE.AnimationAction>>({});
+  const currentActionRef = useRef<string>('');
+  const { scene, animations } = useGLTF('/models/Fox.glb');
+  const { viewport } = useThree();
+
+  useEffect(() => {
+    if (scene) {
+      scene.traverse((child: any) => {
+        if (child.isMesh && child.material) {
+          if (child.material.map) {
+            child.material.map.colorSpace = THREE.SRGBColorSpace;
+          }
+          child.material.needsUpdate = true;
+        }
+      });
+    }
+    if (scene && animations && animations.length > 0) {
+      mixerRef.current = new THREE.AnimationMixer(scene);
+      animations.forEach((clip: THREE.AnimationClip) => {
+        const action = mixerRef.current!.clipAction(clip);
+        actionsRef.current[clip.name] = action;
+      });
+      const idle = actionsRef.current['Idle'] || actionsRef.current['Fox_Idle'] || Object.values(actionsRef.current)[0];
+      if (idle) {
+        idle.reset().play();
+        currentActionRef.current = idle.name;
+      }
+    }
+    return () => {
+      if (mixerRef.current) {
+        mixerRef.current.stopAllAction();
+        mixerRef.current = null;
+      }
+      actionsRef.current = {};
+    };
+  }, [scene, animations]);
+
+  const playAction = (name: string, fadeDuration = 0.3, timeScale = 1) => {
+    const next = actionsRef.current[name];
+    if (!next) return;
+    if (currentActionRef.current === name) {
+      next.timeScale = timeScale;
+      return;
+    }
+    const current = currentActionRef.current ? actionsRef.current[currentActionRef.current] : null;
+    next.reset();
+    next.timeScale = timeScale;
+    next.play();
+    if (current) {
+      next.crossFadeFrom(current, fadeDuration, false);
+    }
+    currentActionRef.current = name;
   };
-  
+
+  useFrame((state, delta) => {
+    if (mixerRef.current) mixerRef.current.update(delta);
+    if (!modelRef.current) return;
+
+    const t = state.clock.elapsedTime;
+    const group = modelRef.current;
+
+    if (isDancing) {
+      playAction('Walk', 0.2, 3);
+      group.position.y = Math.abs(Math.sin(t * 8)) * 0.15 - 0.4;
+      group.rotation.z = Math.sin(t * 6) * 0.15;
+      group.rotation.y = Math.sin(t * 4) * 0.3;
+    } else if (isSpeaking) {
+      playAction('Idle', 0.2, 1.5);
+      group.position.y = Math.abs(Math.sin(t * 6)) * 0.08 - 0.4;
+      group.rotation.y = Math.sin(t * 3) * 0.1;
+    } else if (mood === 'excited') {
+      playAction('Walk', 0.3, 2);
+      group.position.y = Math.abs(Math.sin(t * 6)) * 0.1 - 0.4;
+      group.rotation.y = Math.sin(t * 2) * 0.2;
+    } else if (mood === 'sad') {
+      playAction('Idle', 0.3, 0.5);
+      group.position.y = -0.4;
+      group.rotation.z = 0.1;
+    } else {
+      playAction('Idle', 0.3, 1);
+      group.position.y = -0.4 + Math.sin(t * 2) * 0.02;
+      group.rotation.z = Math.sin(t * 2) * 0.02;
+    }
+
+    // 把狐狸限制在可见蓝色方框内
+    const limitX = 0.9;
+    const limitZ = 0.5;
+    group.position.x = Math.max(-limitX, Math.min(limitX, group.position.x));
+    group.position.z = Math.max(-limitZ, Math.min(limitZ, group.position.z));
+    group.position.y = Math.max(-0.45, group.position.y);
+  });
+
+  const baseScale = Math.max(0.0012, Math.min(0.006, viewport.width * 0.002));
+
   return (
-    <svg viewBox="0 0 120 140" className={`w-32 h-40 ${isDancing ? 'animate-pulse' : ''}`} style={{ transform: getDanceTransform(), transition: 'transform 0.15s ease-out' }}>
-    {/* SpongeBob square body */}
-    <rect x="30" y="40" width="60" height="70" rx="3" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-gray-300" />
-    
-    {/* Sponge texture - dots */}
-    <circle cx="40" cy="50" r="2" fill="none" stroke="currentColor" strokeWidth="1" className="text-gray-400" />
-    <circle cx="55" cy="48" r="1.5" fill="none" stroke="currentColor" strokeWidth="1" className="text-gray-400" />
-    <circle cx="70" cy="52" r="2" fill="none" stroke="currentColor" strokeWidth="1" className="text-gray-400" />
-    <circle cx="85" cy="50" r="1.5" fill="none" stroke="currentColor" strokeWidth="1" className="text-gray-400" />
-    <circle cx="45" cy="65" r="1.5" fill="none" stroke="currentColor" strokeWidth="1" className="text-gray-400" />
-    <circle cx="60" cy="63" r="2" fill="none" stroke="currentColor" strokeWidth="1" className="text-gray-400" />
-    <circle cx="75" cy="67" r="1.5" fill="none" stroke="currentColor" strokeWidth="1" className="text-gray-400" />
-    <circle cx="50" cy="80" r="2" fill="none" stroke="currentColor" strokeWidth="1" className="text-gray-400" />
-    <circle cx="70" cy="78" r="1.5" fill="none" stroke="currentColor" strokeWidth="1" className="text-gray-400" />
-    
-    {/* Eyes - with blink animation */}
-    <circle cx="48" cy="65" r="8" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-gray-300" />
-    <circle cx="72" cy="65" r="8" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-gray-300" />
-    <circle cx="48" cy="65" r="4" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-gray-300" />
-    <circle cx="72" cy="65" r="4" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-gray-300" />
-    {/* Blinking eyes */}
-    <g className={isSpeaking ? 'animate-[blink_0.15s_ease-in-out_infinite]' : 'animate-[blink_3s_ease-in-out_infinite]'}>
-      <circle cx="48" cy="66" r="2" fill="currentColor" className={`text-gray-300 ${mood === 'happy' ? 'animate-pulse' : ''}`} />
-      <circle cx="72" cy="66" r="2" fill="currentColor" className={`text-gray-300 ${mood === 'happy' ? 'animate-pulse' : ''}`} />
-    </g>
-    
-    {/* Eyebrows */}
-    <path d="M42 56 L54 54" stroke="currentColor" strokeWidth="1.5" fill="none" className="text-gray-300" />
-    <path d="M66 54 L78 56" stroke="currentColor" strokeWidth="1.5" fill="none" className="text-gray-300" />
-    
-    {/* Nose */}
-    <ellipse cx="60" cy="75" rx="4" ry="6" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-gray-300" />
-    
-    {/* Mouth */}
-    {mood === 'sad' && (
-      <path d="M48 88 Q60 84 72 88" stroke="currentColor" strokeWidth="1.5" fill="none" className="text-gray-300" />
-    )}
-    {mood === 'happy' && (
-      <>
-        <path d="M45 88 Q60 100 75 88" stroke="currentColor" strokeWidth="1.5" fill="none" className="text-gray-300" />
-        <path d="M55 93 Q60 97 65 93" stroke="currentColor" strokeWidth="1" fill="none" className="text-gray-300" />
-      </>
-    )}
-    {mood === 'neutral' && (
-      <line x1="48" y1="90" x2="72" y2="90" stroke="currentColor" strokeWidth="1.5" className="text-gray-300" />
-    )}
-    {mood === 'excited' && (
-      <>
-        <path d="M45 88 Q60 102 75 88" stroke="currentColor" strokeWidth="1.5" fill="none" className="text-gray-300" />
-        <path d="M52 95 L52 98" stroke="currentColor" strokeWidth="1" className="text-gray-300" />
-        <path d="M60 96 L60 99" stroke="currentColor" strokeWidth="1" className="text-gray-300" />
-        <path d="M68 95 L68 98" stroke="currentColor" strokeWidth="1" className="text-gray-300" />
-      </>
-    )}
-    
-    {/* Teeth */}
-    <rect x="52" y="92" width="6" height="4" rx="1" fill="none" stroke="currentColor" strokeWidth="1" className="text-gray-300" />
-    <rect x="62" y="92" width="6" height="4" rx="1" fill="none" stroke="currentColor" strokeWidth="1" className="text-gray-300" />
-    
-    {/* Cheeks */}
-    <circle cx="38" cy="80" r="4" fill="none" stroke="currentColor" strokeWidth="1" className="text-gray-400" />
-    <circle cx="82" cy="80" r="4" fill="none" stroke="currentColor" strokeWidth="1" className="text-gray-400" />
-    
-    {/* Left arm - normal */}
-    <path d="M28 55 Q18 52 15 45" stroke="currentColor" strokeWidth="1.5" fill="none" className="text-gray-300" />
-    <path d="M13 43 L10 40" stroke="currentColor" strokeWidth="1" fill="none" className="text-gray-300" />
-    <path d="M13 45 L10 48" stroke="currentColor" strokeWidth="1" fill="none" className="text-gray-300" />
-    <path d="M13 47 L10 50" stroke="currentColor" strokeWidth="1" fill="none" className="text-gray-300" />
-    
-    {/* Right arm - waving animation - always wave when dancing */}
-    <g className={(isWaving || isDancing) ? 'animate-[wave_0.3s_ease-in-out_infinite] origin-[92px_55px]' : ''}>
-      <path d="M92 55 Q102 52 105 45" stroke="currentColor" strokeWidth="1.5" fill="none" className="text-gray-300" />
-      <path d="M107 43 L110 40" stroke="currentColor" strokeWidth="1" fill="none" className="text-gray-300" />
-      <path d="M107 45 L110 48" stroke="currentColor" strokeWidth="1" fill="none" className="text-gray-300" />
-      <path d="M107 47 L110 50" stroke="currentColor" strokeWidth="1" fill="none" className="text-gray-300" />
-    </g>
-    
-    {/* Legs */}
-    <path d="M42 110 L42 125" stroke="currentColor" strokeWidth="1.5" fill="none" className="text-gray-300" />
-    <path d="M38 126 L46 126" stroke="currentColor" strokeWidth="1" fill="none" className="text-gray-300" />
-    <path d="M36 128 L48 128" stroke="currentColor" strokeWidth="1" fill="none" className="text-gray-300" />
-    
-    <path d="M78 110 L78 125" stroke="currentColor" strokeWidth="1.5" fill="none" className="text-gray-300" />
-    <path d="M74 126 L82 126" stroke="currentColor" strokeWidth="1" fill="none" className="text-gray-300" />
-    <path d="M72 128 L84 128" stroke="currentColor" strokeWidth="1" fill="none" className="text-gray-300" />
-    
-    {/* Excited stars */}
-    {mood === 'excited' && (
-      <>
-        <text x="20" y="35" fontSize="10" className="animate-ping">⭐</text>
-        <text x="95" y="35" fontSize="10" className="animate-ping">⭐</text>
-      </>
-    )}
-    
-    {/* Speech bubble */}
-    {isSpeaking && (
-      <g className="animate-bounce">
-        <path d="M80 20 Q100 15 110 25 Q115 35 105 40 Q95 45 85 42 L75 50 L78 40 Q68 38 70 30 Q72 22 80 20" fill="none" stroke="currentColor" strokeWidth="1" className="text-gray-300" />
-        <circle cx="85" cy="30" r="1.5" fill="currentColor" className="text-gray-300" />
-        <circle cx="92" cy="28" r="1.2" fill="currentColor" className="text-gray-300" />
-        <circle cx="98" cy="32" r="1" fill="currentColor" className="text-gray-300" />
-      </g>
-    )}
-  </svg>
+    <group ref={modelRef} scale={[baseScale, baseScale, baseScale]} position={[0, -0.4, 0]}>
+      <primitive object={scene} />
+    </group>
   );
-};
+}
+
+function LoadingIndicator() {
+  return (
+    <mesh>
+      <sphereGeometry args={[0.3, 16, 16]} />
+      <meshStandardMaterial color="#FF9933" emissive="#FF9933" emissiveIntensity={0.5} />
+    </mesh>
+  );
+}
+
+function ForestBackground() {
+  // 树木数据
+  const trees = [
+    { x: 50, y: 180, scale: 1.1, color: '#166534' },
+    { x: 150, y: 200, scale: 0.9, color: '#14532d' },
+    { x: 280, y: 190, scale: 1.3, color: '#166534' },
+    { x: 420, y: 210, scale: 0.8, color: '#15803d' },
+    { x: 560, y: 185, scale: 1.2, color: '#166534' },
+    { x: 700, y: 205, scale: 1.0, color: '#14532d' },
+    { x: 840, y: 190, scale: 1.15, color: '#166534' },
+    { x: 980, y: 200, scale: 0.95, color: '#15803d' },
+    { x: 1100, y: 185, scale: 1.25, color: '#14532d' },
+  ];
+
+  // 花朵数据
+  const flowers = [
+    { x: 80, y: 320, color: '#ec4899' },
+    { x: 220, y: 340, color: '#fbbf24' },
+    { x: 350, y: 310, color: '#a855f7' },
+    { x: 500, y: 335, color: '#ec4899' },
+    { x: 640, y: 325, color: '#fbbf24' },
+    { x: 780, y: 345, color: '#a855f7' },
+    { x: 900, y: 320, color: '#ec4899' },
+    { x: 1050, y: 335, color: '#fbbf24' },
+    { x: 1150, y: 325, color: '#a855f7' },
+  ];
+
+  // 草丛数据
+  const grasses = [];
+  for (let i = 0; i < 40; i++) {
+    grasses.push({ x: Math.random() * 1200, y: 280 + Math.random() * 60, h: 8 + Math.random() * 12 });
+  }
+
+  return (
+    <div className="absolute inset-0 overflow-hidden">
+      {/* 天空渐变 */}
+      <div className="absolute inset-0 bg-gradient-to-b from-sky-300 via-emerald-300 to-green-500 dark:from-indigo-900 dark:via-emerald-900 dark:to-green-900" />
+
+      {/* 太阳/月亮 */}
+      <svg className="absolute top-0 left-0 w-full opacity-60" viewBox="0 0 1200 200" preserveAspectRatio="none">
+        <circle cx="100" cy="80" r="35" fill="#fef3c7" opacity="0.8" />
+        <circle cx="1050" cy="60" r="25" fill="#fef3c7" opacity="0.6" />
+      </svg>
+
+      {/* 远山 */}
+      <svg className="absolute bottom-0 left-0 w-full h-1/2" viewBox="0 0 1200 300" preserveAspectRatio="none">
+        <polygon points="0,300 100,150 200,180 300,100 400,160 500,120 600,180 700,90 800,150 900,110 1000,170 1100,130 1200,180 1200,300" fill="#15803d" opacity="0.5" />
+        <polygon points="0,300 150,200 300,230 450,180 600,220 750,170 900,210 1050,180 1200,220 1200,300" fill="#166534" opacity="0.7" />
+      </svg>
+
+      {/* 树木 */}
+      <svg className="absolute bottom-0 left-0 w-full h-2/3" viewBox="0 0 1200 400" preserveAspectRatio="none">
+        {trees.map((tree, i) => (
+          <g key={`tree-${i}`} transform={`translate(${tree.x}, ${tree.y}) scale(${tree.scale})`}>
+            {/* 树干 */}
+            <rect x="-8" y="40" width="16" height="60" fill="#78350f" />
+            {/* 树冠（三层三角形松树） */}
+            <polygon points="0,-40 -40,30 40,30" fill={tree.color} />
+            <polygon points="0,-15 -35,45 35,45" fill={tree.color} opacity="0.95" />
+            <polygon points="0,5 -30,60 30,60" fill={tree.color} opacity="0.9" />
+          </g>
+        ))}
+      </svg>
+
+      {/* 草地 */}
+      <div className="absolute bottom-0 left-0 w-full h-1/3 bg-gradient-to-b from-green-500/60 to-green-700/90 dark:from-green-800/80 dark:to-green-950" />
+
+      {/* 草丛 */}
+      <svg className="absolute bottom-0 left-0 w-full" viewBox="0 0 1200 400" preserveAspectRatio="none" style={{ height: '40%' }}>
+        {grasses.map((g, i) => (
+          <g key={`grass-${i}`} transform={`translate(${g.x}, ${g.y})`}>
+            <path d={`M0,0 Q-3,${-g.h/2} 0,${-g.h} Q3,${-g.h/2} 0,0`} fill="#16a34a" />
+            <path d={`M2,0 Q5,${-g.h/3} 8,${-g.h/2} Q5,${-g.h/4} 2,0`} fill="#15803d" />
+          </g>
+        ))}
+      </svg>
+
+      {/* 花朵 */}
+      <svg className="absolute bottom-0 left-0 w-full" viewBox="0 0 1200 400" preserveAspectRatio="none" style={{ height: '40%' }}>
+        {flowers.map((f, i) => (
+          <g key={`flower-${i}`} transform={`translate(${f.x}, ${f.y})`}>
+            {/* 花茎 */}
+            <line x1="0" y1="0" x2="0" y2="-15" stroke="#15803d" strokeWidth="2" />
+            {/* 叶子 */}
+            <ellipse cx="-3" cy="-8" rx="4" ry="2" fill="#16a34a" transform="rotate(-30 -3 -8)" />
+            {/* 花瓣 */}
+            <circle cx="0" cy="-20" r="3" fill={f.color} />
+            <circle cx="-3" cy="-19" r="3" fill={f.color} opacity="0.9" />
+            <circle cx="3" cy="-19" r="3" fill={f.color} opacity="0.9" />
+            <circle cx="-2" cy="-22" r="3" fill={f.color} opacity="0.9" />
+            <circle cx="2" cy="-22" r="3" fill={f.color} opacity="0.9" />
+            {/* 花心 */}
+            <circle cx="0" cy="-20" r="1.5" fill="#fbbf24" />
+          </g>
+        ))}
+      </svg>
+    </div>
+  );
+}
+
+function FoxCanvas({ mood, isSpeaking, isDancing }: {
+  mood: FoxMood;
+  isSpeaking: boolean;
+  isDancing: boolean;
+}) {
+  return (
+    <div className="relative w-full h-96 rounded-3xl overflow-hidden border border-green-700/30">
+      <ForestBackground />
+      <Canvas
+        camera={{ position: [0, 0.5, 3], fov: 50 }}
+        style={{ width: '100%', height: '100%', position: 'relative', zIndex: 1 }}
+      >
+        <ambientLight intensity={0.7} />
+        <directionalLight position={[3, 5, 2]} intensity={1.3} color="#fff7e6" castShadow />
+        <pointLight position={[-3, 2, -2]} intensity={0.4} color="#FF9933" />
+        <Suspense fallback={<LoadingIndicator />}>
+          <FoxModel mood={mood} isSpeaking={isSpeaking} isDancing={isDancing} />
+        </Suspense>
+      </Canvas>
+    </div>
+  );
+}
+
+function StatusBar({ label, value, color }: { label: string; value: number; color: string }) {
+  return (
+    <div className="flex items-center space-x-2">
+      <span className="text-xs font-medium text-gray-600 dark:text-gray-400 w-12">{label}</span>
+      <div className="flex-1 h-2.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+        <div
+          className="h-full rounded-full transition-all duration-500"
+          style={{ width: `${value}%`, background: `linear-gradient(90deg, ${color}88, ${color})` }}
+        />
+      </div>
+      <span className="text-xs font-medium text-gray-500 dark:text-gray-400 w-8">{value}%</span>
+    </div>
+  );
+}
 
 export function Pet() {
   const navigate = useNavigate();
   const [pet, setPet] = useState<PetState>({
-    name: 'Pet',
+    name: 'Fox',
     hunger: 80,
     happiness: 90,
     health: 95,
@@ -169,8 +286,8 @@ export function Pet() {
     age: 0,
     totalInteractions: 0,
   });
-  
-  const [mood, setMood] = useState('happy');
+
+  const [mood, setMood] = useState<FoxMood>('happy');
   const [showChat, setShowChat] = useState(false);
   const [messages, setMessages] = useState<AIMessage[]>([]);
   const [aiConfig, setAiConfig] = useState<AIConfig>({
@@ -180,11 +297,8 @@ export function Pet() {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const [isWaving, setIsWaving] = useState(false);
   const [isDancing, setIsDancing] = useState(false);
-  const [danceStep, setDanceStep] = useState(0);
-  const audioContextRef = useRef<any>(null);
-  const oscillatorRef = useRef<any>(null);
+  const danceTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -193,96 +307,39 @@ export function Pet() {
         const newEnergy = Math.max(0, prev.energy - 0.3);
         const newHappiness = Math.max(0, Math.min(100, prev.happiness - (newHunger < 30 ? 0.5 : 0.1)));
         const newHealth = newHunger < 20 || newEnergy < 20 ? Math.max(0, prev.health - 0.2) : Math.min(100, prev.health + 0.1);
-        
-        return {
-          ...prev,
-          hunger: newHunger,
-          energy: newEnergy,
-          happiness: newHappiness,
-          health: newHealth,
-          age: prev.age + 0.001,
-        };
+        return { ...prev, hunger: newHunger, energy: newEnergy, happiness: newHappiness, health: newHealth, age: prev.age + 0.001 };
       });
     }, 2000);
-
     return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
-    if (pet.hunger < 30) {
-      setMood('sad');
-    } else if (pet.happiness > 80) {
-      setMood('excited');
-    } else if (pet.happiness > 50) {
-      setMood('happy');
-    } else {
-      setMood('neutral');
-    }
+    if (pet.hunger < 30) setMood('sad');
+    else if (pet.happiness > 80) setMood('excited');
+    else if (pet.happiness > 50) setMood('happy');
+    else setMood('neutral');
   }, [pet.happiness, pet.hunger]);
 
   const handleSendMessage = async (content: string) => {
     if (isLoading) return;
-
-    // Wave when user sends message
-    setIsWaving(true);
-    setTimeout(() => setIsWaving(false), 1500);
-
-    const userMessage: AIMessage = {
-      id: `user-${Date.now()}`,
-      role: 'user',
-      content,
-      timestamp: Date.now(),
-    };
-
+    const userMessage: AIMessage = { id: `user-${Date.now()}`, role: 'user', content, timestamp: Date.now() };
     const newMessages = [...messages, userMessage];
     setMessages(newMessages);
     setIsLoading(true);
-
     try {
       const allMessages = [
-        {
-          id: 'system',
-          role: 'system' as const,
-          content: DEFAULT_SYSTEM_PROMPT,
-          timestamp: Date.now(),
-        },
+        { id: 'system', role: 'system' as const, content: DEFAULT_SYSTEM_PROMPT, timestamp: Date.now() },
         ...newMessages,
       ];
-
       const response = await sendAIMessage(allMessages, aiConfig);
-
-      // Start speaking animation
       setIsSpeaking(true);
-
-      const assistantMessage: AIMessage = {
-        id: `assistant-${Date.now()}`,
-        role: 'assistant',
-        content: response,
-        timestamp: Date.now(),
-      };
-
+      const assistantMessage: AIMessage = { id: `assistant-${Date.now()}`, role: 'assistant', content: response, timestamp: Date.now() };
       setMessages(prev => [...prev, assistantMessage]);
-      
-      // Update pet stats based on interaction
-      setPet(prev => ({
-        ...prev,
-        happiness: Math.min(100, prev.happiness + 2),
-        totalInteractions: prev.totalInteractions + 1,
-      }));
-
-      // Stop speaking after animation
+      setPet(prev => ({ ...prev, happiness: Math.min(100, prev.happiness + 2), totalInteractions: prev.totalInteractions + 1 }));
       setTimeout(() => setIsSpeaking(false), 2000);
-
     } catch (error) {
-      console.error('AI Error:', error);
-      const errorMessage: AIMessage = {
-        id: `error-${Date.now()}`,
-        role: 'assistant',
-        content: 'Oops! I had trouble thinking just now. Please check your AI settings or try again!',
-        timestamp: Date.now(),
-      };
+      const errorMessage: AIMessage = { id: `error-${Date.now()}`, role: 'assistant', content: 'Oops! Something went wrong.', timestamp: Date.now() };
       setMessages(prev => [...prev, errorMessage]);
-      setIsSpeaking(false);
     } finally {
       setIsLoading(false);
     }
@@ -295,229 +352,124 @@ export function Pet() {
     return '😐';
   };
 
-  // What Is Love Dance Function
-  const startDancing = () => {
+  const handleDance = () => {
     if (isDancing) {
-      stopDancing();
+      setIsDancing(false);
+      if (danceTimerRef.current) clearTimeout(danceTimerRef.current);
       return;
     }
-    
     setIsDancing(true);
-    setIsWaving(true);
-    
-    // Create simple audio for demo
-    try {
-      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const oscillator = audioContextRef.current.createOscillator();
-      const gainNode = audioContextRef.current.createGain();
-      
-      oscillator.connect(gainNode);
-      gainNode.connect(audioContextRef.current.destination);
-      gainNode.gain.value = 0.1;
-      
-      // Play a simple beat pattern
-      let beatCount = 0;
-      const playBeat = () => {
-        if (beatCount >= 32) {
-          return;
-        }
-        
-        const time = audioContextRef.current.currentTime;
-        oscillator.frequency.setValueAtTime(beatCount % 4 === 0 ? 220 : 196, time);
-        oscillator.start(time);
-        oscillator.stop(time + 0.1);
-        
-        beatCount++;
-        setTimeout(playBeat, 300);
-      };
-      
-      playBeat();
-    } catch (e) {
-      console.log('Audio not supported');
-    }
-    
-    // Dance steps animation
-    let step = 0;
-    const danceInterval = setInterval(() => {
-      if (!isDancing) {
-        clearInterval(danceInterval);
-        return;
-      }
-      setDanceStep(step % 8);
-      step++;
-    }, 250);
-  };
-
-  const stopDancing = () => {
-    setIsDancing(false);
-    setIsWaving(false);
-    setDanceStep(0);
-    if (oscillatorRef.current) {
-      oscillatorRef.current.stop();
-    }
+    danceTimerRef.current = window.setTimeout(() => setIsDancing(false), 8000);
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 py-12">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-12 transition-colors">
       <div className="container mx-auto px-6 max-w-4xl">
         <button
           onClick={() => navigate('/')}
-          className="mb-8 text-gray-400 hover:text-white flex items-center gap-2 transition-colors"
+          className="mb-8 text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 flex items-center gap-2 transition-colors"
         >
           ← Back to Home
         </button>
 
-        <div className="bg-gray-800 rounded-3xl shadow-2xl overflow-hidden border border-gray-700">
-          <div className="bg-gradient-to-r from-gray-700 via-gray-800 to-gray-700 p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl overflow-hidden border border-gray-200 dark:border-gray-700 transition-colors">
+          <div className="bg-gradient-to-r from-orange-400 via-orange-500 to-orange-600 p-6">
             <div className="flex justify-between items-center text-white">
               <div>
-                <h1 className="text-3xl font-bold mb-2">Digital Pet</h1>
-                <p className="opacity-70">Your AI companion</p>
+                <h1 className="text-3xl font-bold mb-2">3D Fox Pet</h1>
+                <p className="opacity-90">Your AI fox companion</p>
               </div>
               <div className="text-right">
                 <div className="text-2xl font-bold">{pet.name} {getMoodEmoji()}</div>
-                <div className="text-sm opacity-70">Interactions: {pet.totalInteractions}</div>
+                <div className="text-sm opacity-80">Interactions: {pet.totalInteractions}</div>
               </div>
             </div>
           </div>
 
           <div className="p-8">
             <div className="flex flex-col items-center gap-8">
-              {/* 宠物展示 */}
-              <div className="flex flex-col items-center">
-                <div className="relative">
-                  <div className="mb-4">
-                    <PetAvatar mood={mood} isAnimating={false} isSpeaking={isSpeaking} isWaving={isWaving} isDancing={isDancing} danceStep={danceStep} />
-                  </div>
-                </div>
+              <FoxCanvas mood={mood} isSpeaking={isSpeaking} isDancing={isDancing} />
 
-                <div className="text-center mt-4 space-y-2">
-                  <div className="text-2xl font-bold text-gray-200">{pet.name}</div>
-                  <div className="text-gray-500">Age: {Math.floor(pet.age)} days</div>
-                  <div className="flex justify-center gap-4 text-sm">
-                    <span className="bg-gray-700 text-gray-300 px-3 py-1 rounded-full">
-                      Mood: {mood === 'excited' ? 'Excited' : mood === 'happy' ? 'Happy' : mood === 'sad' ? 'Sad' : 'Neutral'}
-                    </span>
-                  </div>
-                  <div className="text-gray-500 text-xs mt-4">
-                    Hunger: {Math.round(pet.hunger)}% | Energy: {Math.round(pet.energy)}% | Health: {Math.round(pet.health)}%
-                  </div>
+              <div className="text-center space-y-2">
+                <div className="text-2xl font-bold text-gray-900 dark:text-white">{pet.name}</div>
+                <div className="text-gray-500 dark:text-gray-400">Age: {Math.floor(pet.age)} days</div>
+                <div className="flex justify-center gap-4 text-sm">
+                  <span className="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-3 py-1 rounded-full">
+                    Mood: {mood}
+                  </span>
                 </div>
               </div>
 
-              {/* 互动按钮 */}
+              <div className="w-full max-w-md space-y-2">
+                <StatusBar label="Hunger" value={Math.round(pet.hunger)} color="#FF9933" />
+                <StatusBar label="Energy" value={Math.round(pet.energy)} color="#3B82F6" />
+                <StatusBar label="Health" value={Math.round(pet.health)} color="#10B981" />
+                <StatusBar label="Happy" value={Math.round(pet.happiness)} color="#EC4899" />
+              </div>
+
               <div className="flex gap-4 justify-center flex-wrap">
                 <button
                   onClick={() => {
-                    setPet(prev => ({
-                      ...prev,
-                      hunger: Math.min(100, prev.hunger + 20),
-                      happiness: Math.min(100, prev.happiness + 5),
-                    }));
-                    setIsWaving(true);
+                    setPet(prev => ({ ...prev, hunger: Math.min(100, prev.hunger + 20), happiness: Math.min(100, prev.happiness + 5) }));
                     setIsSpeaking(true);
-                    setTimeout(() => {
-                      setIsWaving(false);
-                      setIsSpeaking(false);
-                    }, 1500);
+                    setTimeout(() => setIsSpeaking(false), 1500);
                   }}
-                  className="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded-xl transition-all border border-gray-600"
+                  className="px-6 py-3 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-xl transition-all border border-gray-200 dark:border-gray-600"
                 >
                   🍖 Feed
                 </button>
                 <button
                   onClick={() => {
-                    setPet(prev => ({
-                      ...prev,
-                      happiness: Math.min(100, prev.happiness + 15),
-                      energy: Math.max(0, prev.energy - 10),
-                    }));
-                    setIsWaving(true);
+                    setPet(prev => ({ ...prev, happiness: Math.min(100, prev.happiness + 15), energy: Math.max(0, prev.energy - 10) }));
                     setIsSpeaking(true);
-                    setTimeout(() => {
-                      setIsWaving(false);
-                      setIsSpeaking(false);
-                    }, 1500);
+                    setTimeout(() => setIsSpeaking(false), 1500);
                   }}
-                  className="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded-xl transition-all border border-gray-600"
+                  className="px-6 py-3 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-xl transition-all border border-gray-200 dark:border-gray-600"
                 >
                   🎮 Play
                 </button>
                 <button
                   onClick={() => {
-                    setPet(prev => ({
-                      ...prev,
-                      happiness: Math.min(100, prev.happiness + 10),
-                      energy: Math.min(100, prev.energy + 5),
-                    }));
-                    setIsWaving(true);
+                    setPet(prev => ({ ...prev, happiness: Math.min(100, prev.happiness + 10), energy: Math.min(100, prev.energy + 5) }));
                     setIsSpeaking(true);
-                    setTimeout(() => {
-                      setIsWaving(false);
-                      setIsSpeaking(false);
-                    }, 1500);
+                    setTimeout(() => setIsSpeaking(false), 1500);
                   }}
-                  className="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded-xl transition-all border border-gray-600"
+                  className="px-6 py-3 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-xl transition-all border border-gray-200 dark:border-gray-600"
                 >
                   🤚 Pet
                 </button>
                 <button
-                  onClick={startDancing}
+                  onClick={handleDance}
                   className={`px-6 py-3 rounded-xl transition-all border ${
-                    isDancing 
-                      ? 'bg-purple-600 text-white border-purple-500 animate-pulse' 
-                      : 'bg-gray-700 hover:bg-gray-600 text-gray-200 border-gray-600'
+                    isDancing
+                      ? 'bg-purple-600 text-white border-purple-500 animate-pulse'
+                      : 'bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 border-gray-200 dark:border-gray-600'
                   }`}
                 >
                   💃 {isDancing ? 'Stop Dancing' : 'Dance!'}
                 </button>
+                <button
+                  onClick={() => setShowChat(!showChat)}
+                  className="px-6 py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-xl transition-all"
+                >
+                  💬 Chat
+                </button>
               </div>
 
-              {/* 聊天界面 */}
-              <div className="w-full max-w-2xl">
-                <AIChat
-                  messages={messages}
-                  onSendMessage={handleSendMessage}
-                  onConfigChange={setAiConfig}
-                  config={aiConfig}
-                  isLoading={isLoading}
-                  onSpeakingChange={(speaking) => {
-                    setIsSpeaking(speaking);
-                    if (speaking) setIsWaving(true);
-                    else setIsWaving(false);
-                  }}
-                />
-              </div>
+              {showChat && (
+                <div className="w-full max-w-2xl">
+                  <AIChat
+                    messages={messages}
+                    onSendMessage={handleSendMessage}
+                    onConfigChange={setAiConfig}
+                    config={aiConfig}
+                    isLoading={isLoading}
+                    onSpeakingChange={(speaking) => setIsSpeaking(speaking)}
+                  />
+                </div>
+              )}
             </div>
           </div>
-        </div>
-
-        <div className="mt-8 bg-gray-800 rounded-2xl shadow-lg p-6 border border-gray-700">
-          <h3 className="text-xl font-bold mb-4 text-gray-200">🎮 Getting Started</h3>
-          <div className="grid md:grid-cols-2 gap-4 text-gray-400">
-            <div>
-              <h4 className="font-semibold mb-2 text-gray-300">� AI Chat</h4>
-              <ul className="text-sm space-y-1">
-                <li>• Click the settings icon to configure AI</li>
-                <li>• Choose from OpenAI, Claude, Gemini, or Ollama</li>
-                <li>• Enter your API key or local Ollama URL</li>
-                <li>• Start chatting with your pet!</li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-2 text-gray-300">🤖 AI Providers</h4>
-              <ul className="text-sm space-y-1">
-                <li>• <strong>OpenAI:</strong> GPT-3.5 or GPT-4</li>
-                <li>• <strong>Claude:</strong> Claude 3 models</li>
-                <li>• <strong>Gemini:</strong> Google Gemini Pro</li>
-                <li>• <strong>Ollama:</strong> Free local models (Llama2, etc.)</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-8 text-center text-gray-500 text-sm">
-          <p>💜 {pet.name} will always be with you, come back often!</p>
         </div>
       </div>
     </div>
