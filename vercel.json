@@ -21,6 +21,14 @@
       "destination": "/$1"
     },
     {
+      "source": "/(.*\\.svg)",
+      "destination": "/$1"
+    },
+    {
+      "source": "/(.*\\.gif)",
+      "destination": "/$1"
+    },
+    {
       "source": "/(.*)",
       "destination": "/"
     }
