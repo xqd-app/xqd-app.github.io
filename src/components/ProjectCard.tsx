@@ -1,6 +1,7 @@
 import { ArrowUpRight } from 'lucide-react';
 import { useState } from 'react';
 import type { Project } from '@/data/projects';
+import { useTheme } from '@/hooks/useTheme';
 
 interface ProjectCardProps {
   project: Project;
@@ -8,67 +9,84 @@ interface ProjectCardProps {
 
 export function ProjectCard({ project }: ProjectCardProps) {
   const [isHovered, setIsHovered] = useState(false);
+  const { theme } = useTheme();
 
   return (
     <a
       href={project.link}
-      className="group relative block bg-white border border-gray-100 hover:border-transparent rounded-2xl overflow-hidden transition-all duration-500 hover:shadow-[0_20px_50px_-12px_rgba(139,92,246,0.35)] hover:-translate-y-2"
+      className={`group relative block rounded-xl overflow-hidden transition-all duration-500 hover:-translate-y-1 ${
+        theme === 'dark'
+          ? 'bg-gray-800 border border-gray-700 hover:border-gray-600 hover:shadow-xl'
+          : 'bg-white border border-[#E7E3DA] hover:border-[#3C5A78]/30 hover:shadow-lg'
+      }`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {/* 光晕边框 */}
-      <div className="absolute inset-0 rounded-2xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-br from-purple-500/10 via-pink-500/5 to-transparent" />
-
-      <div className="relative aspect-[4/3] overflow-hidden bg-gray-900">
+      <div className={`relative aspect-[4/3] overflow-hidden ${theme === 'dark' ? 'bg-gray-900' : 'bg-[#F7F5F1]'}`}>
         <img
           src={project.image}
           alt={project.title}
-          className={`w-full h-full object-cover transition-transform duration-1000 ease-out ${isHovered ? 'scale-110' : 'scale-100'}`}
+          className={`w-full h-full object-cover transition-transform duration-700 ease-out ${isHovered ? 'scale-105' : 'scale-100'}`}
         />
 
-        {/* 渐变遮罩 */}
-        <div className={`absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent transition-opacity duration-500 ${
-          isHovered ? 'opacity-100' : 'opacity-60'
-        }`}></div>
+        <div className={`absolute inset-0 bg-gradient-to-t transition-opacity duration-500 ${
+          theme === 'dark'
+            ? 'from-gray-900/90 via-gray-900/40 to-transparent'
+            : 'from-black/60 via-black/20 to-transparent'
+        } ${isHovered ? 'opacity-100' : 'opacity-70'}`}></div>
 
-        {/* 顶部光带 */}
-        <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-purple-500 via-pink-500 to-purple-500 transform origin-left transition-transform duration-500 ${
-          isHovered ? 'scale-x-100' : 'scale-x-0'
-        }`}></div>
-
-        {/* View 按钮 */}
-        <div className={`absolute bottom-4 left-1/2 -translate-x-1/2 transition-all duration-500 ${
-          isHovered ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+        <div className={`absolute inset-x-0 bottom-0 p-6 transition-all duration-500 ${
+          isHovered ? 'translate-y-0 opacity-100' : 'translate-y-2 opacity-0'
         }`}>
-          <span className="inline-flex items-center gap-2 px-6 py-3 bg-white/95 backdrop-blur-md text-purple-700 rounded-full text-sm font-semibold hover:bg-white transition-all shadow-xl hover:scale-105">
-            <span>View Project</span>
+          <span className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium ${
+            theme === 'dark'
+              ? 'bg-white/90 text-gray-900'
+              : 'bg-white/95 text-[#3C5A78] shadow-sm'
+          }`}>
+            View Project
             <ArrowUpRight size={16} />
           </span>
-        </div>
-
-        {/* 角标 */}
-        <div className="absolute top-3 right-3 px-3 py-1 bg-black/40 backdrop-blur-md rounded-full border border-white/10 opacity-0 group-hover:opacity-100 transition-all duration-500 transform translate-y-2 group-hover:translate-y-0">
-          <span className="text-[10px] font-bold uppercase tracking-widest text-white">Featured</span>
         </div>
       </div>
 
       <div className="relative p-6">
-        <span className="inline-flex items-center gap-2 px-3 py-1 bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 rounded-full text-xs uppercase tracking-widest mb-3 font-semibold">
-          <span className="w-1.5 h-1.5 bg-purple-500 rounded-full animate-pulse"></span>
-          {project.category}
-        </span>
-        <h3 className="text-xl font-bold mb-2 text-gray-900 group-hover:text-purple-700 transition-colors">
+        <div className="flex items-center gap-2 mb-3">
+          <span className={`w-1.5 h-1.5 rounded-full ${theme === 'dark' ? 'bg-purple-400' : 'bg-[#3C5A78]'}`}></span>
+          <span className={`text-xs uppercase tracking-widest font-medium ${
+            theme === 'dark' ? 'text-gray-400' : 'text-[#6B7077]'
+          }`}>
+            {project.category}
+          </span>
+        </div>
+
+        <h3 className={`text-xl font-semibold mb-2 transition-colors ${
+          theme === 'dark'
+            ? 'text-white group-hover:text-purple-400'
+            : 'text-[#1E2227] group-hover:text-[#3C5A78]'
+        }`}>
           {project.title}
         </h3>
-        <p className="text-sm text-gray-600 mb-4 line-clamp-2 leading-relaxed">
+
+        <p className={`text-sm line-clamp-2 leading-relaxed ${
+          theme === 'dark' ? 'text-gray-400' : 'text-[#6B7077]'
+        }`}>
           {project.description}
         </p>
-        <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-          <span className="text-xs text-gray-400 uppercase tracking-wider">Explore</span>
-          <div className="flex items-center text-sm font-semibold text-purple-600 opacity-0 group-hover:opacity-100 transform translate-x-2 group-hover:translate-x-0 transition-all duration-300">
-            <span className="uppercase tracking-wider">Detail</span>
-            <ArrowUpRight size={14} className="ml-2" />
-          </div>
+
+        <div className={`mt-4 pt-4 border-t flex items-center justify-between ${
+          theme === 'dark' ? 'border-gray-700' : 'border-[#E7E3DA]'
+        }`}>
+          <span className={`text-xs uppercase tracking-wider ${
+            theme === 'dark' ? 'text-gray-500' : 'text-[#6B7077]'
+          }`}>
+            Explore
+          </span>
+          <ArrowUpRight
+            size={18}
+            className={`transition-all duration-300 ${
+              isHovered ? 'translate-x-0 opacity-100' : '-translate-x-1 opacity-0'
+            } ${theme === 'dark' ? 'text-purple-400' : 'text-[#3C5A78]'}`}
+          />
         </div>
       </div>
     </a>

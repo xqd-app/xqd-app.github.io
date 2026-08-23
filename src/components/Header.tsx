@@ -29,33 +29,35 @@ export function Header() {
     <header
       className={cn(
         'fixed top-0 left-0 right-0 z-50 transition-all duration-500',
-        isScrolled ? (theme === 'dark' ? 'bg-gray-900/95 backdrop-blur-md shadow-sm' : 'bg-white/95 backdrop-blur-md shadow-sm') : 'bg-transparent'
+        isScrolled
+          ? (theme === 'dark' ? 'bg-gray-900/95 backdrop-blur-md shadow-sm border-b border-gray-800' : 'bg-white/95 backdrop-blur-md shadow-sm border-b border-[#E7E3DA]')
+          : 'bg-transparent'
       )}
     >
       <nav className={cn(
-        'container mx-auto px-6 lg:px-12',
-        theme === 'dark' ? 'text-white' : 'text-gray-900'
+        'w-full px-0',
+        theme === 'dark' ? 'text-white' : 'text-[#1E2227]'
       )}>
         <div className="flex items-center justify-between h-20">
           <a href="/" className={cn(
-            'text-2xl font-bold tracking-tight transition-colors',
-            theme === 'dark' ? 'hover:text-purple-400' : 'hover:text-purple-600'
+            'font-["Playfair_Display"] text-4xl font-semibold tracking-tight transition-colors',
+            theme === 'dark' ? 'hover:text-purple-400' : 'hover:text-[#3C5A78]'
           )}>Xing Qide</a>
-          <div className="flex items-center space-x-8">
+          <div className="flex items-center space-x-8 pr-6 lg:pr-12">
             <div className="hidden md:flex items-center space-x-8">
               {navLinks.map((link) => (
                 <a
                   key={link.name}
                   href={link.href}
                   className={cn(
-                    'text-sm uppercase tracking-widest transition-colors relative group',
-                    theme === 'dark' ? 'hover:text-purple-400' : 'hover:text-purple-600'
+                    'text-lg uppercase tracking-wider font-medium transition-colors relative group',
+                    theme === 'dark' ? 'text-gray-300 hover:text-white' : 'text-[#6B7077] hover:text-[#3C5A78]'
                   )}
                 >
                   {link.name}
                   <span className={cn(
                     'absolute -bottom-1 left-0 w-0 h-px transition-all duration-300 group-hover:w-full',
-                    theme === 'dark' ? 'bg-purple-400' : 'bg-purple-600'
+                    theme === 'dark' ? 'bg-purple-400' : 'bg-[#3C5A78]'
                   )} />
                 </a>
               ))}
@@ -64,19 +66,19 @@ export function Header() {
             <button
               onClick={toggleTheme}
               className={cn(
-                'p-2 transition-colors',
-                theme === 'dark' ? 'hover:text-purple-400' : 'hover:text-purple-600'
+                'p-2 rounded-lg transition-all',
+                theme === 'dark' ? 'hover:bg-gray-800' : 'hover:bg-[#F7F5F1]'
               )}
               aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
             >
-              {theme === 'dark' ? <Moon size={20} /> : <Sun size={20} />}
+              {theme === 'dark' ? <Moon size={18} /> : <Sun size={18} />}
             </button>
 
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               className={cn(
-                'md:hidden p-2 transition-colors',
-                theme === 'dark' ? 'hover:text-purple-400' : 'hover:text-purple-600'
+                'md:hidden p-2 rounded-lg transition-all',
+                theme === 'dark' ? 'hover:bg-gray-800' : 'hover:bg-[#F7F5F1]'
               )}
               aria-label="Toggle menu"
             >
@@ -98,8 +100,8 @@ export function Header() {
                 href={link.href}
                 onClick={() => setIsMobileMenuOpen(false)}
                 className={cn(
-                  'text-sm uppercase tracking-widest transition-colors',
-                  theme === 'dark' ? 'hover:text-purple-400' : 'hover:text-purple-600'
+                  'text-lg uppercase tracking-wider font-medium transition-colors',
+                  theme === 'dark' ? 'text-gray-300 hover:text-white' : 'text-[#6B7077] hover:text-[#3C5A78]'
                 )}
               >
                 {link.name}

@@ -12,10 +12,11 @@ import Upload from "@/pages/Upload";
 import { Pet } from "@/pages/Pet";
 import { Certificates } from "@/pages/Certificates";
 import { Teacher } from "@/pages/Teacher";
+import { MindMapPage } from "@/pages/MindMapPage";
 
 function AppContent() {
   const location = useLocation();
-  const hideGlobalPet = location.pathname === '/pet';
+  const hideGlobalPet = location.pathname === '/pet' || location.pathname === '/teacher';
   return (
     <>
       <Header />
@@ -27,6 +28,7 @@ function AppContent() {
           <Route path="/resume" element={<Resume />} />
           <Route path="/certificates" element={<Certificates />} />
           <Route path="/teacher" element={<Teacher />} />
+          <Route path="/mindmap" element={<MindMapPage />} />
           <Route path="/life" element={<Life />} />
           <Route path="/photo/:id" element={<PhotoDetail />} />
           <Route path="/upload" element={<Upload />} />

@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { ArrowLeft, Lock, Eye, EyeOff, Upload, Trash2, Users, Play, Pause, RotateCcw, X, FileSpreadsheet, ChevronDown, ChevronRight, UserCheck, Sparkles } from 'lucide-react';
+import { ArrowLeft, Lock, Eye, EyeOff, Upload, Trash2, Users, Play, Pause, RotateCcw, X, FileSpreadsheet, ChevronDown, ChevronRight, UserCheck, Sparkles, Network, ExternalLink } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import * as XLSX from 'xlsx';
+import { MindMapModal } from '@/components/MindMapModal';
 
 const ACCESS_PASSWORD = '112200';
 
@@ -43,8 +44,9 @@ export function Teacher() {
   const [uploadError, setUploadError] = useState('');
   const [detectedInfo, setDetectedInfo] = useState('');
   const [fileSaving, setFileSaving] = useState(false);
-  const [fileSavedName, setFileSavedName] = useState('');
+  const [, setFileSavedName] = useState('');
   const [expandedClass, setExpandedClass] = useState<string | null>(null);
+  const [showMindMap, setShowMindMap] = useState(false);
 
   // 随机点名
   const [selectedClassId, setSelectedClassId] = useState<string>('');
@@ -218,9 +220,9 @@ export function Teacher() {
           throw new Error(result.error || '保存失败');
         }
         setFileSavedName(result.filename);
-      } catch (err: any) {
+      } catch (err) {
         // 文件保存失败不阻塞流程，仅提示
-        console.warn('文件保存到本地失败:', err?.message);
+        console.warn('文件保存到本地失败:', err instanceof Error ? err.message : String(err));
         setFileSavedName('');
       } finally {
         setFileSaving(false);
@@ -348,17 +350,17 @@ export function Teacher() {
   // 密码验证页面
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 transition-colors duration-300 flex items-center justify-center pt-20 px-6 relative overflow-hidden">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 transition-colors duration-300 flex items-center justify-center pt-20 px-6 relative overflow-hidden">
         {/* 背景装饰 */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute -top-40 -left-40 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl animate-pulse"></div>
-          <div className="absolute -bottom-40 -right-40 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+          <div className="absolute -top-40 -left-40 w-96 h-96 bg-slate-500/20 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute -bottom-40 -right-40 w-96 h-96 bg-slate-600/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
         </div>
 
         <div className="w-full max-w-md relative z-10">
           <div className="bg-white/10 backdrop-blur-2xl rounded-3xl shadow-2xl overflow-hidden border border-white/20">
             <div className="p-8 text-center">
-              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-5xl mx-auto mb-4 shadow-lg shadow-purple-500/50">
+              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-slate-500 to-slate-700 flex items-center justify-center text-5xl mx-auto mb-4 shadow-lg shadow-slate-500/30">
                 🔒
               </div>
               <h1 className="text-2xl font-bold text-white mb-2">
@@ -384,7 +386,7 @@ export function Teacher() {
                         setPasswordError('');
                       }}
                       placeholder="请输入密码"
-                      className="w-full px-4 py-3 pr-12 rounded-xl border border-white/20 bg-white/5 text-white placeholder:text-white/30 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all backdrop-blur-sm"
+                      className="w-full px-4 py-3 pr-12 rounded-xl border border-white/20 bg-white/5 text-white placeholder:text-white/30 focus:ring-2 focus:ring-slate-400 focus:border-transparent outline-none transition-all backdrop-blur-sm"
                     />
                     <button
                       type="button"
@@ -402,7 +404,7 @@ export function Teacher() {
                 </div>
                 <button
                   type="submit"
-                  className="w-full px-6 py-4 bg-gradient-to-r from-purple-600 to-pink-500 text-white rounded-xl font-semibold hover:from-purple-500 hover:to-pink-400 transition-all shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 transform hover:-translate-y-0.5"
+                  className="w-full px-6 py-4 bg-gradient-to-r from-slate-600 to-slate-700 text-white rounded-xl font-semibold hover:from-slate-500 hover:to-slate-600 transition-all shadow-lg shadow-slate-500/30 hover:shadow-slate-500/50 transform hover:-translate-y-0.5"
                 >
                   🔓 验证访问
                 </button>
@@ -424,11 +426,11 @@ export function Teacher() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50 to-pink-50 dark:from-slate-900 dark:via-purple-900/30 dark:to-slate-900 transition-colors duration-300 pt-20 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-100 to-slate-100 dark:from-slate-900 dark:via-slate-800/30 dark:to-slate-900 transition-colors duration-300 pt-20 relative overflow-hidden">
       {/* 背景装饰 */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 left-10 w-72 h-72 bg-purple-300/20 dark:bg-purple-500/10 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-20 right-10 w-96 h-96 bg-pink-300/20 dark:bg-pink-500/10 rounded-full blur-3xl"></div>
+        <div className="absolute top-20 left-10 w-72 h-72 bg-slate-400/20 dark:bg-slate-600/10 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-20 right-10 w-96 h-96 bg-slate-400/20 dark:bg-slate-600/10 rounded-full blur-3xl"></div>
       </div>
 
       <div className="container mx-auto px-6 lg:px-12 py-12 relative z-10">
@@ -441,25 +443,45 @@ export function Teacher() {
             <ArrowLeft size={20} />
             <span>返回首页</span>
           </button>
-          <button
-            onClick={() => {
-              setIsAuthenticated(false);
-              setPassword('');
-            }}
-            className="flex items-center gap-2 px-4 py-2 text-sm bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm text-gray-600 dark:text-gray-300 rounded-lg hover:bg-white dark:hover:bg-gray-700 transition-colors border border-white/40 dark:border-gray-700"
-          >
-            <Lock size={16} />
-            锁定
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => navigate('/mindmap')}
+              className="flex items-center gap-2 px-4 py-2 text-sm bg-gradient-to-r from-slate-700 to-slate-600 text-white rounded-lg hover:from-slate-800 hover:to-slate-700 transition-all shadow-lg shadow-slate-600/30 group"
+            >
+              <Network size={16} />
+              <span>知识思维导图</span>
+              <span className="w-px h-4 bg-white/30 mx-0.5"></span>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  window.open('/mindmap', '_blank', 'noopener,noreferrer,width=1400,height=900');
+                }}
+                title="弹出独立窗口"
+                className="p-0.5 rounded hover:bg-white/20 transition-colors"
+              >
+                <ExternalLink size={13} />
+              </button>
+            </button>
+            <button
+              onClick={() => {
+                setIsAuthenticated(false);
+                setPassword('');
+              }}
+              className="flex items-center gap-2 px-4 py-2 text-sm bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm text-gray-600 dark:text-gray-300 rounded-lg hover:bg-white dark:hover:bg-gray-700 transition-colors border border-white/40 dark:border-gray-700"
+            >
+              <Lock size={16} />
+              锁定
+            </button>
+          </div>
         </div>
 
         {/* 标题 */}
         <div className="text-center mb-12">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300 rounded-full text-sm font-medium mb-4">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-slate-200 dark:bg-slate-800/30 text-slate-700 dark:text-slate-400 rounded-full text-sm font-medium mb-4">
             <Sparkles size={16} />
             智能课堂管理
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-purple-600 via-pink-500 to-red-500 bg-clip-text text-transparent mb-3">
+          <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-slate-700 via-slate-600 to-red-500 bg-clip-text text-transparent mb-3">
             班级管理与随机点名
           </h1>
           <p className="text-gray-500 dark:text-gray-400 max-w-xl mx-auto">
@@ -473,14 +495,14 @@ export function Teacher() {
             {/* 上传按钮 */}
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-slate-600 to-slate-600 flex items-center justify-center">
                   <Users size={18} className="text-white" />
                 </div>
                 班级列表
               </h2>
               <button
                 onClick={() => setShowUpload(true)}
-                className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-purple-600 to-pink-500 text-white rounded-xl font-medium hover:from-purple-700 hover:to-pink-600 transition-all shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 hover:-translate-y-0.5"
+                className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-slate-700 to-slate-600 text-white rounded-xl font-medium hover:from-slate-800 hover:to-slate-700 transition-all shadow-lg shadow-slate-600/30 hover:shadow-slate-600/50 hover:-translate-y-0.5"
               >
                 <Upload size={18} />
                 上传班级表格
@@ -501,7 +523,7 @@ export function Teacher() {
                     key={cls.id}
                     className={`bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl shadow-lg overflow-hidden border transition-all ${
                       selectedClassId === cls.id
-                        ? 'border-purple-400 dark:border-purple-500 shadow-purple-200 dark:shadow-purple-900/30'
+                        ? 'border-slate-500 dark:border-slate-600 shadow-slate-300 dark:shadow-slate-800/30'
                         : 'border-white/60 dark:border-gray-700/60 hover:shadow-xl'
                     }`}
                   >
@@ -511,11 +533,11 @@ export function Teacher() {
                         className="flex items-center gap-3 flex-1 text-left"
                       >
                         {expandedClass === cls.id ? (
-                          <ChevronDown size={20} className="text-purple-400" />
+                          <ChevronDown size={20} className="text-slate-500" />
                         ) : (
                           <ChevronRight size={20} className="text-gray-400" />
                         )}
-                        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold shadow-md">
+                        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-slate-600 to-slate-600 flex items-center justify-center text-white font-bold shadow-md">
                           {cls.students.length}
                         </div>
                         <div>
@@ -536,7 +558,7 @@ export function Teacher() {
                           }}
                           className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                             selectedClassId === cls.id
-                              ? 'bg-gradient-to-r from-purple-600 to-pink-500 text-white shadow-md'
+                              ? 'bg-gradient-to-r from-slate-700 to-slate-600 text-white shadow-md'
                               : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                           }`}
                         >
@@ -561,7 +583,7 @@ export function Teacher() {
                               key={idx}
                               className="flex items-center gap-2 px-3 py-2 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700/50 dark:to-gray-700/30 rounded-lg text-sm border border-gray-100 dark:border-gray-700"
                             >
-                              <span className="w-5 h-5 rounded-full bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-300 flex items-center justify-center text-xs font-bold flex-shrink-0">
+                              <span className="w-5 h-5 rounded-full bg-slate-200 dark:bg-slate-800/40 text-slate-700 dark:text-slate-400 flex items-center justify-center text-xs font-bold flex-shrink-0">
                                 {idx + 1}
                               </span>
                               <span className="text-gray-700 dark:text-gray-200 truncate">{name}</span>
@@ -579,7 +601,7 @@ export function Teacher() {
           {/* 右侧：随机点名 */}
           <div className="lg:col-span-2">
             <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-3xl shadow-xl overflow-hidden border border-white/60 dark:border-gray-700/60 sticky top-24">
-              <div className="bg-gradient-to-r from-purple-600 via-pink-500 to-red-500 p-5 text-white relative overflow-hidden">
+              <div className="bg-gradient-to-r from-slate-700 via-slate-600 to-red-500 p-5 text-white relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16"></div>
                 <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full -ml-12 -mb-12"></div>
                 <h2 className="text-lg font-bold flex items-center gap-2 relative">
@@ -594,7 +616,7 @@ export function Teacher() {
                 {/* 未选择班级 */}
                 {!selectedClassId && (
                   <div className="text-center py-12">
-                    <div className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30 flex items-center justify-center text-4xl">
+                    <div className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-slate-200 to-slate-200 dark:from-slate-800/30 dark:to-slate-800/30 flex items-center justify-center text-4xl">
                       👆
                     </div>
                     <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">
@@ -616,7 +638,7 @@ export function Teacher() {
                       </div>
                       <div className="text-right">
                         <div className="text-xs text-gray-400 dark:text-gray-500 mb-0.5">可选 / 总数</div>
-                        <div className="font-bold text-purple-600 dark:text-purple-400">
+                        <div className="font-bold text-slate-700 dark:text-slate-500">
                           {availableCount} <span className="text-gray-400 font-normal">/ {selectedClass.students.length}</span>
                         </div>
                       </div>
@@ -631,7 +653,7 @@ export function Teacher() {
                           onChange={(e) => setExcludePicked(e.target.checked)}
                           className="sr-only peer"
                         />
-                        <div className="w-10 h-6 bg-gray-200 dark:bg-gray-600 rounded-full peer-checked:bg-gradient-to-r peer-checked:from-purple-500 peer-checked:to-pink-500 transition-colors"></div>
+                        <div className="w-10 h-6 bg-gray-200 dark:bg-gray-600 rounded-full peer-checked:bg-gradient-to-r peer-checked:from-slate-600 peer-checked:to-slate-600 transition-colors"></div>
                         <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-4"></div>
                       </div>
                       <span className="text-sm text-gray-600 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">排除已点名学生</span>
@@ -640,7 +662,7 @@ export function Teacher() {
                     {/* 点名显示区 */}
                     <div className={`relative rounded-2xl mb-5 overflow-hidden transition-all duration-500 ${
                       isRolling
-                        ? 'bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-50 dark:from-indigo-900/40 dark:via-purple-900/30 dark:to-pink-900/20'
+                        ? 'bg-gradient-to-br from-slate-200 via-slate-100 to-slate-100 dark:from-slate-800/40 dark:via-slate-800/30 dark:to-slate-800/20'
                         : showResult
                         ? 'bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 dark:from-amber-900/30 dark:via-yellow-900/20 dark:to-orange-900/10'
                         : 'bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700/50 dark:to-gray-800/50'
@@ -649,12 +671,12 @@ export function Teacher() {
                       {isRolling && (
                         <>
                           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent" style={{ animation: 'shimmer 1.5s linear infinite' }}></div>
-                          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500" style={{ animation: 'borderGlow 1s ease-in-out infinite' }}></div>
-                          <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500" style={{ animation: 'borderGlow 1s ease-in-out infinite' }}></div>
+                          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-slate-600 via-slate-600 to-slate-600" style={{ animation: 'borderGlow 1s ease-in-out infinite' }}></div>
+                          <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-slate-600 via-slate-600 to-slate-600" style={{ animation: 'borderGlow 1s ease-in-out infinite' }}></div>
                           {/* 旋转粒子 */}
-                          <div className="absolute top-4 left-4 w-2 h-2 bg-purple-400 rounded-full" style={{ animation: 'floatParticle 2s ease-in-out infinite' }}></div>
-                          <div className="absolute top-6 right-6 w-2 h-2 bg-pink-400 rounded-full" style={{ animation: 'floatParticle 2.5s ease-in-out infinite 0.5s' }}></div>
-                          <div className="absolute bottom-6 left-8 w-1.5 h-1.5 bg-indigo-400 rounded-full" style={{ animation: 'floatParticle 2.2s ease-in-out infinite 0.3s' }}></div>
+                          <div className="absolute top-4 left-4 w-2 h-2 bg-slate-500 rounded-full" style={{ animation: 'floatParticle 2s ease-in-out infinite' }}></div>
+                          <div className="absolute top-6 right-6 w-2 h-2 bg-slate-500 rounded-full" style={{ animation: 'floatParticle 2.5s ease-in-out infinite 0.5s' }}></div>
+                          <div className="absolute bottom-6 left-8 w-1.5 h-1.5 bg-slate-500 rounded-full" style={{ animation: 'floatParticle 2.2s ease-in-out infinite 0.3s' }}></div>
                           <div className="absolute bottom-4 right-4 w-2 h-2 bg-rose-400 rounded-full" style={{ animation: 'floatParticle 2.8s ease-in-out infinite 0.8s' }}></div>
                         </>
                       )}
@@ -684,14 +706,14 @@ export function Teacher() {
                       <div className="relative p-8 text-center min-h-[260px] flex flex-col items-center justify-center">
                         {isRolling ? (
                           <>
-                            <div className="text-xs text-purple-600 dark:text-purple-300 font-bold mb-4 tracking-[0.3em] uppercase" style={{ animation: 'pulse 1s ease-in-out infinite' }}>
+                            <div className="text-xs text-slate-700 dark:text-slate-400 font-bold mb-4 tracking-[0.3em] uppercase" style={{ animation: 'pulse 1s ease-in-out infinite' }}>
                               ◆ 正在抽取中 ◆
                             </div>
                             {/* 大号姓名显示 */}
                             <div className="relative">
                               <div
                                 key={currentName}
-                                className="text-6xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 tracking-wide"
+                                className="text-6xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-slate-700 via-slate-700 to-slate-600 tracking-wide"
                                 style={{
                                   animation: 'nameFlash 0.15s ease-out',
                                   filter: 'drop-shadow(0 4px 20px rgba(168, 85, 247, 0.4))',
@@ -707,7 +729,7 @@ export function Teacher() {
                                   key={i}
                                   className={`text-xs px-2 py-0.5 rounded-md transition-all duration-150 ${
                                     s === currentName
-                                      ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white scale-125 shadow-md shadow-purple-500/50 font-bold'
+                                      ? 'bg-gradient-to-r from-slate-600 to-slate-600 text-white scale-125 shadow-md shadow-slate-600/50 font-bold'
                                       : 'bg-gray-200/50 dark:bg-gray-600/50 text-gray-400'
                                   }`}
                                 >
@@ -731,13 +753,13 @@ export function Teacher() {
                               {pickedName}
                             </div>
                             <div className="mt-5 flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 bg-white/60 dark:bg-gray-800/60 px-4 py-2 rounded-full backdrop-blur-sm">
-                              <Sparkles size={14} className="text-pink-400" />
-                              <span>第 <span className="font-bold text-purple-600 dark:text-purple-400">{history.length}</span> 位被点到的同学</span>
+                              <Sparkles size={14} className="text-slate-500" />
+                              <span>第 <span className="font-bold text-slate-700 dark:text-slate-500">{history.length}</span> 位被点到的同学</span>
                             </div>
                           </>
                         ) : (
                           <>
-                            <div className="w-20 h-20 mx-auto mb-4 rounded-3xl bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30 flex items-center justify-center text-4xl" style={{ animation: 'floatSlow 3s ease-in-out infinite' }}>
+                            <div className="w-20 h-20 mx-auto mb-4 rounded-3xl bg-gradient-to-br from-slate-200 to-slate-200 dark:from-slate-800/30 dark:to-slate-800/30 flex items-center justify-center text-4xl" style={{ animation: 'floatSlow 3s ease-in-out infinite' }}>
                               🎯
                             </div>
                             <div className="text-gray-500 dark:text-gray-400 text-base font-bold mb-1">
@@ -757,7 +779,7 @@ export function Teacher() {
                         <button
                           onClick={startRolling}
                           disabled={availableCount === 0}
-                          className="flex-1 flex items-center justify-center gap-2 px-4 py-3.5 bg-gradient-to-r from-purple-600 to-pink-500 text-white rounded-xl font-semibold hover:from-purple-700 hover:to-pink-600 transition-all shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 hover:-translate-y-0.5 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+                          className="flex-1 flex items-center justify-center gap-2 px-4 py-3.5 bg-gradient-to-r from-slate-700 to-slate-600 text-white rounded-xl font-semibold hover:from-slate-800 hover:to-slate-700 transition-all shadow-lg shadow-slate-600/30 hover:shadow-slate-600/50 hover:-translate-y-0.5 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0"
                         >
                           <Play size={20} />
                           {showResult ? '再抽一次' : '开始点名'}
@@ -788,7 +810,7 @@ export function Teacher() {
                             <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
                             点名记录
                           </div>
-                          <span className="text-xs px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300 rounded-full font-medium">
+                          <span className="text-xs px-2 py-0.5 bg-slate-200 dark:bg-slate-800/30 text-slate-700 dark:text-slate-400 rounded-full font-medium">
                             {history.length} 人
                           </span>
                         </div>
@@ -805,7 +827,7 @@ export function Teacher() {
                               <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0 ${
                                 idx === 0
                                   ? 'bg-gradient-to-br from-green-400 to-emerald-500 text-white shadow-md'
-                                  : 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400'
+                                  : 'bg-slate-200 dark:bg-slate-800/30 text-slate-700 dark:text-slate-500'
                               }`}>
                                 {idx === 0 ? '★' : idx + 1}
                               </span>
@@ -844,7 +866,7 @@ export function Teacher() {
             className="bg-white dark:bg-gray-800 rounded-3xl max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="bg-gradient-to-r from-purple-600 via-pink-500 to-red-500 p-6 text-white relative overflow-hidden">
+            <div className="bg-gradient-to-r from-slate-700 via-slate-600 to-red-500 p-6 text-white relative overflow-hidden">
               <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16"></div>
               <div className="flex items-center justify-between relative">
                 <h2 className="text-xl font-bold flex items-center gap-2">
@@ -879,7 +901,7 @@ export function Teacher() {
                   value={newClassName}
                   onChange={(e) => setNewClassName(e.target.value)}
                   placeholder="例如：高一(3)班"
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all"
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-slate-600 focus:border-transparent outline-none transition-all"
                 />
               </div>
 
@@ -888,7 +910,7 @@ export function Teacher() {
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   选择表格文件
                 </label>
-                <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-8 text-center hover:border-purple-500 hover:bg-purple-50/50 dark:hover:bg-purple-900/10 transition-all cursor-pointer"
+                <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-8 text-center hover:border-slate-600 hover:bg-slate-100/50 dark:hover:bg-slate-800/10 transition-all cursor-pointer"
                   onClick={() => document.getElementById('file-input')?.click()}
                 >
                   <input
@@ -908,8 +930,8 @@ export function Teacher() {
                     </div>
                   ) : (
                     <div>
-                      <div className="w-14 h-14 mx-auto mb-3 rounded-xl bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30 flex items-center justify-center">
-                        <Upload size={28} className="text-purple-500" />
+                      <div className="w-14 h-14 mx-auto mb-3 rounded-xl bg-gradient-to-br from-slate-200 to-slate-200 dark:from-slate-800/30 dark:to-slate-800/30 flex items-center justify-center">
+                        <Upload size={28} className="text-slate-600" />
                       </div>
                       <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">点击选择文件</p>
                       <p className="text-xs text-gray-400 mt-1">支持 .xlsx, .xls, .csv 格式</p>
@@ -949,7 +971,7 @@ export function Teacher() {
                           key={idx}
                           className="px-3 py-1.5 bg-white dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg text-sm shadow-sm flex items-center gap-1.5"
                         >
-                          <span className="w-4 h-4 rounded-full bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-300 flex items-center justify-center text-[10px] font-bold">
+                          <span className="w-4 h-4 rounded-full bg-slate-200 dark:bg-slate-800/40 text-slate-700 dark:text-slate-400 flex items-center justify-center text-[10px] font-bold">
                             {idx + 1}
                           </span>
                           {name}
@@ -977,7 +999,7 @@ export function Teacher() {
                 <button
                   onClick={handleConfirmUpload}
                   disabled={!newClassName.trim() || previewStudents.length === 0 || fileSaving}
-                  className="flex-1 px-4 py-3 bg-gradient-to-r from-purple-600 to-pink-500 text-white rounded-xl font-semibold hover:from-purple-700 hover:to-pink-600 transition-all shadow-lg disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="flex-1 px-4 py-3 bg-gradient-to-r from-slate-700 to-slate-600 text-white rounded-xl font-semibold hover:from-slate-800 hover:to-slate-700 transition-all shadow-lg disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {fileSaving ? (
                     <>
@@ -993,6 +1015,9 @@ export function Teacher() {
           </div>
         </div>
       )}
+
+      {/* 知识思维导图弹窗 */}
+      {showMindMap && <MindMapModal onClose={() => setShowMindMap(false)} />}
 
       {/* 动画样式 */}
       <style>{`

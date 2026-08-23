@@ -158,7 +158,14 @@ async function sendToGemini(
     parts: [{ text: m.content }],
   }));
 
-  const requestBody: any = { contents };
+  interface GeminiRequestBody {
+    contents: typeof contents;
+    systemInstruction?: {
+      parts: Array<{ text: string }>;
+    };
+  }
+
+  const requestBody: GeminiRequestBody = { contents };
   if (systemPrompt) {
     requestBody.systemInstruction = { parts: [{ text: systemPrompt }] };
   }

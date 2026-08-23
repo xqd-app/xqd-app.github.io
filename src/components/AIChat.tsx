@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, Settings, X, Loader2, Mic, MicOff, Volume2, VolumeX } from 'lucide-react';
-import { AIMessage, AIConfig, AI_PROVIDERS, DEFAULT_SYSTEM_PROMPT, sendAIMessage } from '@/lib/ai-service';
+import { Send, Settings, Loader2, Mic, MicOff, Volume2, VolumeX } from 'lucide-react';
+import { AIMessage, AIConfig, AI_PROVIDERS } from '@/lib/ai-service';
 import { useTheme } from '@/hooks/useTheme';
 import { cn } from '@/lib/utils';
 
@@ -34,28 +34,31 @@ export function AIChat({ messages, onSendMessage, onConfigChange, config, isLoad
   useEffect(() => {
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
       setSpeechSupported(true);
-      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-      recognitionRef.current = new SpeechRecognition();
-      recognitionRef.current.continuous = false;
-      recognitionRef.current.interimResults = true;
-      recognitionRef.current.lang = 'en-US';
+      const SpeechRecognitionAPI = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
-      recognitionRef.current.onresult = (event: any) => {
-        const transcript = event.results[0][0].transcript;
-        setInput(transcript);
-      };
+      if (SpeechRecognitionAPI) {
+        recognitionRef.current = new SpeechRecognitionAPI();
+        recognitionRef.current.continuous = false;
+        recognitionRef.current.interimResults = true;
+        recognitionRef.current.lang = 'en-US';
 
-      recognitionRef.current.onend = () => {
-        setIsListening(false);
-        if (input.trim()) {
-          onSendMessage(input.trim());
-          setInput('');
-        }
-      };
+        recognitionRef.current.onresult = (event: any) => {
+          const transcript = event.results[0][0].transcript;
+          setInput(transcript);
+        };
 
-      recognitionRef.current.onerror = () => {
-        setIsListening(false);
-      };
+        recognitionRef.current.onend = () => {
+          setIsListening(false);
+          if (input.trim()) {
+            onSendMessage(input.trim());
+            setInput('');
+          }
+        };
+
+        recognitionRef.current.onerror = () => {
+          setIsListening(false);
+        };
+      }
     }
 
     return () => {
@@ -63,7 +66,7 @@ export function AIChat({ messages, onSendMessage, onConfigChange, config, isLoad
         recognitionRef.current.stop();
       }
     };
-  }, []);
+  }, [input, onSendMessage]);
 
   // Speak last message when it arrives
   useEffect(() => {
@@ -163,7 +166,7 @@ export function AIChat({ messages, onSendMessage, onConfigChange, config, isLoad
               </label>
               <select
                 value={localConfig.provider}
-                onChange={(e) => setLocalConfig({ ...localConfig, provider: e.target.value as any })}
+                onChange={(e) => setLocalConfig({ ...localConfig, provider: e.target.value as keyof typeof AI_PROVIDERS })}
                 className={cn(
                   "w-full px-3 py-2 rounded-lg border text-sm",
                   theme === 'dark' 

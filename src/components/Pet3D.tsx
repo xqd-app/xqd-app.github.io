@@ -1,16 +1,17 @@
 import { useRef, useState, useEffect } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
+import * as THREE from 'three';
 
 // Jerry Mouse - 体素风格的3D杰瑞模型
 function JerryModel({ isHovered, isIdle }: { isHovered: boolean; isIdle: boolean }) {
-  const mouseRef = useRef<any>(null);
-  const tailRef = useRef<any>(null);
-  const eyeLRef = useRef<any>(null);
-  const eyeRRef = useRef<any>(null);
-  const headRef = useRef<any>(null);
-  const earLRef = useRef<any>(null);
-  const earRRef = useRef<any>(null);
+  const mouseRef = useRef<THREE.Group>(null);
+  const tailRef = useRef<THREE.Group>(null);
+  const eyeLRef = useRef<THREE.Mesh>(null);
+  const eyeRRef = useRef<THREE.Mesh>(null);
+  const headRef = useRef<THREE.Mesh>(null);
+  const earLRef = useRef<THREE.Mesh>(null);
+  const earRRef = useRef<THREE.Mesh>(null);
 
   useFrame((state, delta) => {
     if (mouseRef.current) {
@@ -53,7 +54,6 @@ function JerryModel({ isHovered, isIdle }: { isHovered: boolean; isIdle: boolean
   const bodyColor = "#A0522D"; // 更暖的棕色
   const bellyColor = "#FFE4C4"; // 更温暖的米色
   const pinkColor = "#FF69B4"; // 更鲜艳的粉色
-  const darkBrown = "#5D4037"; // 深棕色
 
   return (
     <group ref={mouseRef}>
@@ -310,7 +310,7 @@ export function DesktopPet3D() {
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
-      onMouseLeave={(e) => {
+      onMouseLeave={() => {
         handleMouseUp();
         setIsHovered(false);
       }}

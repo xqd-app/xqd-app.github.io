@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>高中信息技术 · 可编辑知识时间线</title>
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --purple: #8b5cf6;
+    --pink: #ec4899;
+    --accent: #a78bfa;
+    --text: #ffffff;
+    --muted: #c4c4d4;
+    --card: rgba(20, 20, 35, 0.82);
+    --card-2: #1a1a2e;
+    --line-grad: linear-gradient(to bottom, #8b5cf6, #ec4899);
+    --glow: rgba(139, 92, 246, 0.2);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { min-height: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+    background-attachment: fixed;
+    color: var(--text);
+    padding: 0 16px 60px;
+    line-height: 1.6;
+  }
+
+  .toolbar {
+    position: sticky; top: 0; z-index: 50;
+    max-width: 800px; margin: 0 auto;
+    padding: 14px 0;
+    background: linear-gradient(180deg, rgba(10,10,15,0.95) 60%, rgba(10,10,15,0));
+    backdrop-filter: blur(6px);
+  }
+  .toolbar-inner {
+    display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+    background: rgba(20,20,35,0.7);
+    border: 1px solid rgba(139,92,246,0.25);
+    border-radius: 14px; padding: 10px 12px;
+    box-shadow: 0 0 20px rgba(139,92,246,0.12);
+  }
+  .search-box { position: relative; flex: 1 1 220px; }
+  .search-box svg { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--accent); }
+  .search-box input {
+    width: 100%; padding: 9px 12px 9px 34px;
+    background: #12121e; color: var(--text);
+    border: 1px solid rgba(139,92,246,0.3); border-radius: 10px;
+    outline: none; font-size: 14px;
+    transition: border-color .2s, box-shadow .2s;
+  }
+  .search-box input:focus { border-color: var(--purple); box-shadow: 0 0 0 3px rgba(139,92,246,0.25); }
+  .btn {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 8px 12px; font-size: 13px; cursor: pointer;
+    color: #e9e4ff; background: rgba(139,92,246,0.14);
+    border: 1px solid rgba(139,92,246,0.35); border-radius: 10px;
+    transition: all .2s ease; white-space: nowrap;
+  }
+  .btn:hover { background: rgba(139,92,246,0.28); box-shadow: 0 0 12px rgba(139,92,246,0.35); transform: translateY(-1px); }
+  .btn svg { width: 14px; height: 14px; }
+  .btn.ghost { background: transparent; }
+
+  .app { max-width: 800px; margin: 0 auto; }
+
+  .timeline {
+    position: relative;
+    padding-left: 34px;
+    margin-top: 22px;
+  }
+  .timeline::before {
+    content: '';
+    position: absolute; left: 12px; top: 6px; bottom: 6px; width: 3px;
+    background: var(--line-grad);
+    border-radius: 3px;
+    box-shadow: 0 0 12px rgba(236,72,153,0.5);
+  }
+
+  .root-card {
+    position: relative;
+    background: linear-gradient(135deg, #ec4899, #8b5cf6);
+    color: #fff; font-weight: 700; font-size: 20px;
+    padding: 18px 20px; border-radius: 16px;
+    box-shadow: 0 10px 30px -8px rgba(236,72,153,0.5);
+    text-align: center; letter-spacing: .5px;
+    word-break: break-word;
+  }
+  .root-card .card-text { cursor: text; }
+  .root-card .card-actions { top: 10px; }
+
+  .node { position: relative; }
+  .node .card {
+    position: relative;
+    background: var(--card);
+    border: 1px solid rgba(139,92,246,0.22);
+    border-radius: 14px;
+    box-shadow: 0 0 15px var(--glow);
+    transition: transform .3s ease, box-shadow .3s ease, border-color .3s ease, opacity .3s ease;
+    word-break: break-word;
+  }
+  .node .card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(139,92,246,0.5);
+    box-shadow: 0 0 26px rgba(139,92,246,0.4);
+  }
+  .node.depth-1 { margin-bottom: 14px; }
+  .node.depth-1 .card { padding: 14px 16px; }
+
+  .module-dot {
+    position: absolute; left: -28px; top: 22px;
+    width: 15px; height: 15px; border-radius: 50%;
+    background: #fff;
+    border: 3px solid var(--purple);
+    box-shadow: 0 0 0 4px rgba(139,92,246,0.25), 0 0 18px rgba(236,72,153,0.8);
+    z-index: 2;
+  }
+
+  .node.depth-2 .card, .node.depth-3 .card, .node.depth-4 .card,
+  .node.depth-5 .card, .node.depth-6 .card {
+    background: var(--card-2);
+    border-color: rgba(139,92,246,0.16);
+    padding: 10px 12px;
+  }
+  .children {
+    margin-left: 14px; padding-left: 16px;
+    border-left: 2px solid rgba(139,92,246,0.4);
+    margin-top: 8px;
+  }
+  .node.depth-2 .children, .node.depth-3 .children,
+  .node.depth-4 .children, .node.depth-5 .children {
+    margin-left: 10px; padding-left: 12px;
+  }
+  .children .node { margin-bottom: 8px; }
+  .children .node:last-child { margin-bottom: 0; }
+
+  .children { overflow: hidden; }
+  .node > .card { cursor: pointer; }
+
+  .card-header { display: flex; align-items: flex-start; gap: 8px; }
+  .card-text {
+    flex: 1; color: var(--text); font-size: 14px;
+    outline: none; cursor: text; min-height: 1.2em;
+  }
+  .node.depth-1 .card-text { font-weight: 600; font-size: 15px; }
+  .node.depth-2 .card-text { color: #dcd7f5; }
+  .node.depth-3 .card-text, .node.depth-4 .card-text,
+  .node.depth-5 .card-text, .node.depth-6 .card-text { color: var(--muted); font-size: 13.5px; }
+  .card-text[contenteditable="true"] {
+    background: rgba(139,92,246,0.12);
+    border-radius: 6px; padding: 0 4px;
+    box-shadow: 0 0 0 2px rgba(139,92,246,0.5);
+  }
+
+  .meta-chip {
+    display: inline-block; flex: none;
+    font-size: 10px; color: rgba(167,139,250,0.75);
+    background: rgba(139,92,246,0.1);
+    border: 1px solid rgba(139,92,246,0.2);
+    border-radius: 6px; padding: 0 5px; margin-top: 2px;
+    white-space: nowrap;
+  }
+
+  .toggle-btn {
+    flex: none; width: 32px; height: 32px;
+    display: flex; align-items: center; justify-content: center;
+    background: #16162a; border: 1px solid var(--purple);
+    border-radius: 50%; cursor: pointer; color: var(--accent);
+    transition: transform .3s ease, background .2s ease;
+    margin-top: -4px;
+  }
+  .toggle-btn:hover { background: rgba(139,92,246,0.25); }
+  .toggle-btn svg { width: 16px; height: 16px; transition: transform .3s ease; }
+  .toggle-btn.expanded svg { transform: rotate(90deg); }
+
+  .card-actions {
+    position: absolute; top: -12px; right: 10px;
+    display: flex; gap: 4px;
+    opacity: 0; transform: translateY(4px);
+    transition: opacity .2s ease, transform .2s ease;
+    z-index: 5;
+  }
+  .node .card:hover .card-actions { opacity: 1; transform: translateY(0); }
+  .card-actions button {
+    width: 26px; height: 26px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; border: 1px solid rgba(139,92,246,0.4);
+    background: #1b1b30; color: #cdc4f7;
+    transition: all .15s ease;
+  }
+  .card-actions button svg { width: 13px; height: 13px; }
+  .card-actions button:hover { transform: scale(1.12); background: rgba(139,92,246,0.3); }
+  .card-actions button.add-child:hover { color: #4ade80; border-color: #4ade80; }
+  .card-actions button.add-sibling:hover { color: #38bdf8; border-color: #38bdf8; }
+  .card-actions button.del { color: #fca5a5; }
+  .card-actions button.del:hover { color: #fff; background: #dc2626; border-color: #dc2626; }
+  .card-actions button.del.confirming {
+    background: #dc2626; color: #fff; border-color: #dc2626;
+    animation: pulse-red .8s infinite;
+  }
+  @keyframes pulse-red { 50% { box-shadow: 0 0 0 5px rgba(220,38,38,0.4); } }
+
+  .node.dragging { opacity: 0.45; }
+  .node.drag-over-top::before, .node.drag-over-bottom::after {
+    content: '';
+    display: block; height: 3px; border-radius: 3px;
+    background: var(--line-grad); margin: 2px 0;
+    box-shadow: 0 0 10px rgba(236,72,153,0.8);
+  }
+
+  mark { background: rgba(167,139,250,0.45); color: #fff; border-radius: 3px; padding: 0 1px; }
+  .node.dim > .card { opacity: 0.28; filter: saturate(0.4); }
+  .node.match > .card {
+    border-color: rgba(236,72,153,0.8);
+    box-shadow: 0 0 24px rgba(236,72,153,0.5);
+  }
+
+  .drop-overlay {
+    position: fixed; inset: 0; z-index: 200;
+    background: rgba(10,10,15,0.82);
+    display: none; align-items: center; justify-content: center;
+    border: 3px dashed var(--purple); font-size: 20px; color: var(--accent);
+  }
+  .drop-overlay.show { display: flex; }
+
+  .modal-mask {
+    position: fixed; inset: 0; z-index: 300;
+    background: rgba(0,0,0,0.6);
+    display: none; align-items: center; justify-content: center;
+  }
+  .modal-mask.show { display: flex; }
+  .modal {
+    background: #1b1b30; border: 1px solid rgba(139,92,246,0.4);
+    border-radius: 14px; padding: 22px; max-width: 360px; width: 90%;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5); text-align: center;
+  }
+  .modal p { margin-bottom: 18px; color: var(--text); font-size: 15px; }
+  .modal .modal-btns { display: flex; gap: 10px; justify-content: center; }
+  .modal .btn.ok { background: #dc2626; border-color: #dc2626; }
+  .modal .btn.ok:hover { background: #ef4444; }
+
+  #toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: rgba(20,20,35,0.95); border: 1px solid var(--purple);
+    color: #fff; padding: 10px 18px; border-radius: 10px;
+    font-size: 14px; opacity: 0; transition: all .3s ease; z-index: 400;
+    box-shadow: 0 0 20px rgba(139,92,246,0.5); pointer-events: none;
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  @media (max-width: 600px) {
+    body { padding: 0 10px 40px; }
+    .toolbar-inner { padding: 8px; }
+    .btn { padding: 7px 9px; font-size: 12px; }
+    .root-card { font-size: 17px; padding: 14px; }
+    .timeline { padding-left: 28px; }
+    .timeline::before { left: 9px; }
+    .module-dot { left: -24px; top: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <div class="toolbar-inner">
+    <div class="search-box">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input id="search" type="text" placeholder="搜索知识点…" autocomplete="off" />
+    </div>
+    <button class="btn" id="btnSave" title="保存到本地">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+      保存
+    </button>
+    <button class="btn" id="btnExport" title="导出 JSON">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      导出
+    </button>
+    <button class="btn" id="btnImport" title="导入 JSON">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      导入
+    </button>
+    <button class="btn ghost" id="btnReset" title="重置默认">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+      重置
+    </button>
+    <input type="file" id="fileInput" accept=".json,application/json" style="display:none" />
+  </div>
+</div>
+
+<div class="app">
+  <div id="tree"></div>
+</div>
+
+<div class="drop-overlay" id="dropOverlay">📥 松开以导入 JSON 文件</div>
+<div class="modal-mask" id="modalMask">
+  <div class="modal">
+    <p id="modalMsg">确认执行此操作？</p>
+    <div class="modal-btns">
+      <button class="btn" id="modalCancel">取消</button>
+      <button class="btn ok" id="modalOk">确认</button>
+    </div>
+  </div>
+</div>
+<div id="toast"></div>
+
+<script>
+'use strict';
+
+const STORAGE_KEY = 'it_knowledge_tree';
+
+const DEFAULT_DATA = {"content":"高中信息技术全套知识总导图","children":[{"content":"模块1 认识数据与大数据","children":[{"content":"1.1 数据、信息与知识","children":[{"content":"数据","children":[{"content":"定义：描述事物的符号记录，是信息的载体","children":[],"payload":{"tag":"li","lines":"4,5"}},{"content":"数据类型：数值、文字、图像、音频、视频","children":[],"payload":{"tag":"li","lines":"5,6"}},{"content":"数据特征","children":[{"content":"二进制存储：计算机内部0/1存储加工","children":[],"payload":{"tag":"li","lines":"7,8"}},{"content":"语义性：符号赋予含义才产生价值","children":[],"payload":{"tag":"li","lines":"8,9"}},{"content":"分散性：分散记录客观事物状态","children":[],"payload":{"tag":"li","lines":"9,10"}},{"content":"多样性、感知性：图形、音视频等多种形式","children":[],"payload":{"tag":"li","lines":"10,11"}}],"payload":{"tag":"li","lines":"6,11"}}],"payload":{"tag":"li","lines":"3,11"}},{"content":"信息","children":[{"content":"定义：经过加工处理的数据，消除认知不确定性","children":[],"payload":{"tag":"li","lines":"12,13"}},{"content":"信息特征","children":[{"content":"依附性：必须依附载体传播存储","children":[],"payload":{"tag":"li","lines":"14,15"}},{"content":"时效性&价值性：随时间价值改变","children":[],"payload":{"tag":"li","lines":"15,16"}},{"content":"传递性、共享性：可复制传播分享","children":[],"payload":{"tag":"li","lines":"16,17"}}],"payload":{"tag":"li","lines":"13,17"}}],"payload":{"tag":"li","lines":"11,17"}},{"content":"知识","children":[{"content":"定义：社会实践得到的认识、经验总和；信息提炼内化得到","children":[],"payload":{"tag":"li","lines":"18,19"}}],"payload":{"tag":"li","lines":"17,19"}},{"content":"四层递进关系：数据 →加工赋予含义→ 信息 →提炼归纳内化→ 知识 →实践升华→ 智慧","children":[],"payload":{"tag":"li","lines":"19,20"}}],"payload":{"tag":"h3","lines":"2,3"}},{"content":"1.2 数字化与编码","children":[{"content":"数制：二进制、十进制、十六进制相互转换","children":[],"payload":{"tag":"li","lines":"21,22"}},{"content":"字符编码：ASCII编码、Unicode通用编码","children":[],"payload":{"tag":"li","lines":"22,23"}},{"content":"多媒体存储容量计算","children":[{"content":"音频容量 = 采样频率 × 量化位数 × 声道数 × 时长 ÷ 8","children":[],"payload":{"tag":"li","lines":"24,25"}},{"content":"图像容量 = 水平像素数 × 垂直像素数 × 颜色深度 ÷ 8","children":[],"payload":{"tag":"li","lines":"25,26"}}],"payload":{"tag":"li","lines":"23,26"}}],"payload":{"tag":"h3","lines":"20,21"}},{"content":"1.3 数据科学与大数据","children":[{"content":"数据科学兴起条件","children":[{"content":"计算机技术革新，提升数据处理能力","children":[],"payload":{"tag":"li","lines":"28,29"}},{"content":"物联网、智能终端产生海量原始数据","children":[],"payload":{"tag":"li","lines":"29,30"}}],"payload":{"tag":"li","lines":"27,30"}},{"content":"大数据四大特征","children":[{"content":"巨量性：数据体量规模庞大","children":[],"payload":{"tag":"li","lines":"31,32"}},{"content":"多样性：数据格式类型繁多","children":[],"payload":{"tag":"li","lines":"32,33"}},{"content":"迅变性：数据生成快，需要快速处理","children":[],"payload":{"tag":"li","lines":"33,34"}},{"content":"价值性：海量数据，有效价值占比很小","children":[],"payload":{"tag":"li","lines":"34,35"}}],"payload":{"tag":"li","lines":"30,35"}},{"content":"大数据五大核心技术","children":[{"content":"采集技术：传感器、社交网络采集海量多源数据","children":[],"payload":{"tag":"li","lines":"36,37"}},{"content":"预处理技术：数据清洗、集成、转换、规约，提升数据质量","children":[],"payload":{"tag":"li","lines":"37,38"}},{"content":"存储管理技术：云存储、数据中心完成存储调度","children":[],"payload":{"tag":"li","lines":"38,39"}},{"content":"分析挖掘技术：从海量数据挖掘潜在价值信息","children":[],"payload":{"tag":"li","lines":"39,40"}},{"content":"可视化应用技术：图形化直观展示分析结果","children":[],"payload":{"tag":"li","lines":"40,41"}}],"payload":{"tag":"li","lines":"35,41"}},{"content":"大数据应用场景","children":[{"content":"生活服务｜智慧城市｜医疗健康｜社区管理","children":[],"payload":{"tag":"li","lines":"42,43"}}],"payload":{"tag":"li","lines":"41,43"}},{"content":"大数据弊端与对策","children":[{"content":"问题：信息茧房、大数据杀熟、隐私风险","children":[],"payload":{"tag":"li","lines":"44,45"}},{"content":"对策：拓展多元信息源、批判性思维、清理算法推荐偏好","children":[],"payload":{"tag":"li","lines":"45,47"}}],"payload":{"tag":"li","lines":"43,47"}}],"payload":{"tag":"h3","lines":"26,27"}}],"payload":{"tag":"h2","lines":"1,2"}},{"content":"模块2 算法与程序设计","children":[{"content":"2.1 用计算机解决问题","children":[{"content":"完整流程：分析问题 → 设计算法 → 编写程序 → 调试运行","children":[],"payload":{"tag":"li","lines":"49,50"}}],"payload":{"tag":"h3","lines":"48,49"}},{"content":"2.2 算法的概念及描述","children":[{"content":"算法定义：解决问题的有限确定步骤","children":[],"payload":{"tag":"li","lines":"51,52"}},{"content":"算法五大特征：有穷性｜确定性｜输入｜输出｜可行性","children":[],"payload":{"tag":"li","lines":"52,53"}},{"content":"算法描述方式：自然语言、流程图、伪代码","children":[],"payload":{"tag":"li","lines":"53,54"}}],"payload":{"tag":"h3","lines":"50,51"}},{"content":"2.3 程序设计基本知识","children":[{"content":"基础要素：常量、变量、运算符、表达式","children":[],"payload":{"tag":"li","lines":"55,56"}},{"content":"三大程序控制结构","children":[{"content":"顺序结构：语句从上到下依次执行","children":[],"payload":{"tag":"li","lines":"57,58"}},{"content":"选择结构：if / if‑else，按条件分支执行","children":[],"payload":{"tag":"li","lines":"58,59"}},{"content":"循环结构：for、while，循环重复执行代码块","children":[],"payload":{"tag":"li","lines":"59,60"}}],"payload":{"tag":"li","lines":"56,60"}}],"payload":{"tag":"h3","lines":"54,55"}},{"content":"2.4 基于算法的问题解决","children":[{"content":"解析算法：利用数学公式直接计算求解","children":[],"payload":{"tag":"li","lines":"61,62"}},{"content":"枚举算法：遍历全部候选，筛选符合条件解","children":[],"payload":{"tag":"li","lines":"62,64"}}],"payload":{"tag":"h3","lines":"60,61"}}],"payload":{"tag":"h2","lines":"47,48"}},{"content":"模块3 数据处理与数据分析","children":[{"content":"3.1 数据处理一般过程","children":[{"content":"流程：数据采集 → 数据整理 → 数据分析 → 数据可视化 → 输出报告","children":[],"payload":{"tag":"li","lines":"66,67"}}],"payload":{"tag":"h3","lines":"65,66"}},{"content":"3.2 数据采集与整理","children":[{"content":"采集渠道：问卷、传感器、网络爬虫、公开数据集","children":[],"payload":{"tag":"li","lines":"68,69"}},{"content":"数据整理：去重、填补缺失值、处理异常脏数据","children":[],"payload":{"tag":"li","lines":"69,70"}}],"payload":{"tag":"h3","lines":"67,68"}},{"content":"3.3 数据分析与可视化","children":[{"content":"数据分析手段：统计、对比、相关性分析","children":[],"payload":{"tag":"li","lines":"71,72"}},{"content":"可视化图表：柱状图、折线图、饼图、热力图等","children":[],"payload":{"tag":"li","lines":"72,73"}}],"payload":{"tag":"h3","lines":"70,71"}},{"content":"3.4 数据分析报告与应用","children":[{"content":"报告组成：背景说明、数据来源、分析过程、结论、优化建议","children":[],"payload":{"tag":"li","lines":"74,76"}}],"payload":{"tag":"h3","lines":"73,74"}}],"payload":{"tag":"h2","lines":"64,65"}},{"content":"模块4 人工智能","children":[{"content":"4.1 认识人工智能","children":[{"content":"AI概念：机器模拟、延伸人类智能","children":[],"payload":{"tag":"li","lines":"78,79"}},{"content":"核心基础技术：机器学习、深度学习、自然语言处理NLP","children":[],"payload":{"tag":"li","lines":"79,80"}}],"payload":{"tag":"h3","lines":"77,78"}},{"content":"4.2 利用智能工具解决问题","children":[{"content":"常见人工智能工具","children":[{"content":"北斗导航系统：无源定位；军事、航海、交通民用","children":[],"payload":{"tag":"li","lines":"82,83"}},{"content":"人脸识别技术","children":[{"content":"流程：人脸采集 →预处理 →特征提取 →匹配识别","children":[],"payload":{"tag":"li","lines":"84,85"}},{"content":"场景：手机解锁、门禁、安防身份核验","children":[],"payload":{"tag":"li","lines":"85,86"}}],"payload":{"tag":"li","lines":"83,86"}},{"content":"对话机器人：基于NLP；客服、教育智能问答、智能投顾","children":[],"payload":{"tag":"li","lines":"86,87"}},{"content":"其他工具：机器作诗、AI图像生成","children":[],"payload":{"tag":"li","lines":"87,88"}}],"payload":{"tag":"li","lines":"81,88"}},{"content":"课堂体验活动：人机创作对比；分享AI类移动App","children":[],"payload":{"tag":"li","lines":"88,89"}},{"content":"实践项目：智能班级交互系统开发","children":[{"content":"确定目标内容，选择分享形式","children":[],"payload":{"tag":"li","lines":"90,91"}},{"content":"账号管理：账号类型、权限分级、管理制度","children":[],"payload":{"tag":"li","lines":"91,92"}},{"content":"对接公众平台、开发接口、测试迭代优化","children":[],"payload":{"tag":"li","lines":"92,93"}}],"payload":{"tag":"li","lines":"89,93"}},{"content":"多元评价体系","children":[{"content":"评价主体：教师评价｜学生自评｜学生互评","children":[],"payload":{"tag":"li","lines":"94,95"}},{"content":"评价维度：过程评价｜结果评价｜综合评价","children":[],"payload":{"tag":"li","lines":"95,96"}},{"content":"附加评价：课堂参与度、小组项目合作表现","children":[],"payload":{"tag":"li","lines":"96,97"}}],"payload":{"tag":"li","lines":"93,97"}}],"payload":{"tag":"h3","lines":"80,81"}},{"content":"4.3 人工智能的应用与影响","children":[{"content":"多行业实际应用","children":[{"content":"医疗领域：辅助影像诊断、药物研发、个性化治疗","children":[],"payload":{"tag":"li","lines":"99,100"}},{"content":"工业领域：自动化生产、智能制造、供应链优化","children":[],"payload":{"tag":"li","lines":"100,101"}},{"content":"金融领域：风险评估、投资策略、智能客服投顾","children":[],"payload":{"tag":"li","lines":"101,102"}},{"content":"交通领域：智能交通调度、自动驾驶研发","children":[],"payload":{"tag":"li","lines":"102,103"}}],"payload":{"tag":"li","lines":"98,103"}},{"content":"人工智能优势","children":[{"content":"处理海量数据，提取有效信息","children":[],"payload":{"tag":"li","lines":"104,105"}},{"content":"自动完成数据分析、预测、决策任务","children":[],"payload":{"tag":"li","lines":"105,106"}},{"content":"优化现有系统，提升整体效率性能","children":[],"payload":{"tag":"li","lines":"106,107"}}],"payload":{"tag":"li","lines":"103,107"}},{"content":"AI挑战与伦理道德风险","children":[{"content":"个人隐私风险：数据集中，敏感信息泄露滥用","children":[],"payload":{"tag":"li","lines":"108,109"}},{"content":"伦理困境：自动驾驶抉择、医疗算法失误责任","children":[],"payload":{"tag":"li","lines":"109,110"}},{"content":"数据偏见与算法歧视：训练数据带来不公平输出","children":[],"payload":{"tag":"li","lines":"110,111"}}],"payload":{"tag":"li","lines":"107,111"}},{"content":"社会责任以及应对策略","children":[{"content":"提供可持续方案：能源优化、智慧城市资源调配","children":[],"payload":{"tag":"li","lines":"112,113"}},{"content":"保障公共利益、社会安全","children":[],"payload":{"tag":"li","lines":"113,114"}},{"content":"推动创新，促进教育公平、文化遗产保护传承","children":[],"payload":{"tag":"li","lines":"114,115"}}],"payload":{"tag":"li","lines":"111,115"}},{"content":"智能信息处理未来发展趋势","children":[{"content":"机器学习大规模普及落地","children":[],"payload":{"tag":"li","lines":"116,117"}},{"content":"自然语言处理技术持续深化","children":[],"payload":{"tag":"li","lines":"117,118"}},{"content":"智能制造深度改造生产行业","children":[],"payload":{"tag":"li","lines":"118,120"}}],"payload":{"tag":"li","lines":"115,120"}}],"payload":{"tag":"h3","lines":"97,98"}}],"payload":{"tag":"h2","lines":"76,77"}},{"content":"模块5 信息社会","children":[{"content":"5.1 信息技术及其应用","children":[{"content":"信息技术：传感技术、通信技术、计算机技术、控制技术","children":[],"payload":{"tag":"li","lines":"122,123"}},{"content":"对学习、生活、生产带来的双面影响","children":[],"payload":{"tag":"li","lines":"123,124"}}],"payload":{"tag":"h3","lines":"121,122"}},{"content":"5.2 认识信息社会","children":[{"content":"四大特征：数字生活、信息经济、在线政府、数字文化","children":[],"payload":{"tag":"li","lines":"125,127"}}],"payload":{"tag":"h3","lines":"124,125"}}],"payload":{"tag":"h2","lines":"120,121"}},{"content":"模块6 信息系统","children":[{"content":"6.1 信息系统的组成与功能","children":[{"content":"五大组成要素：硬件、软件、数据、通信网络、人","children":[],"payload":{"tag":"li","lines":"129,130"}}],"payload":{"tag":"h3","lines":"128,129"}},{"content":"6.2 信息系统开发过程","children":[{"content":"需求分析 →系统设计 →开发实现 →测试部署 →维护迭代","children":[],"payload":{"tag":"li","lines":"131,132"}}],"payload":{"tag":"h3","lines":"130,131"}},{"content":"6.3 信息系统优势与局限性","children":[{"content":"优势：高效便捷、资源共享、协同工作","children":[],"payload":{"tag":"li","lines":"133,134"}},{"content":"局限：依赖网络硬件、系统故障风险、数据安全隐患","children":[],"payload":{"tag":"li","lines":"134,136"}}],"payload":{"tag":"h3","lines":"132,133"}}],"payload":{"tag":"h2","lines":"127,128"}},{"content":"模块7 信息系统软硬件与通信网络","children":[{"content":"7.1 信息系统中的计算机与移动终端","children":[{"content":"计算机硬件基础；移动终端设备特点","children":[],"payload":{"tag":"li","lines":"138,139"}}],"payload":{"tag":"h3","lines":"137,138"}},{"content":"7.2 通信网络","children":[{"content":"带宽与网络接入方式","children":[],"payload":{"tag":"li","lines":"140,141"}},{"content":"IP地址、域名基础概念","children":[],"payload":{"tag":"li","lines":"141,142"}},{"content":"无线局域网组建原理","children":[],"payload":{"tag":"li","lines":"142,143"}}],"payload":{"tag":"h3","lines":"139,140"}},{"content":"7.3 信息系统中的软件","children":[{"content":"系统软件；应用软件，二者区分","children":[],"payload":{"tag":"li","lines":"144,146"}}],"payload":{"tag":"h3","lines":"143,144"}}],"payload":{"tag":"h2","lines":"136,137"}},{"content":"模块8 信息安全与信息社会责任","children":[{"content":"8.1 信息安全风险与防范","children":[{"content":"安全风险：病毒木马、网络钓鱼、数据泄露、网络攻击","children":[],"payload":{"tag":"li","lines":"148,149"}},{"content":"防范手段：高强度密码、数据备份、辨别诈骗、安全软件","children":[],"payload":{"tag":"li","lines":"149,150"}}],"payload":{"tag":"h3","lines":"147,148"}},{"content":"8.2 信息社会责任","children":[{"content":"保护个人与他人隐私","children":[],"payload":{"tag":"li","lines":"151,152"}},{"content":"尊重知识产权","children":[],"payload":{"tag":"li","lines":"152,153"}},{"content":"遵守网络法律法规，网络文明","children":[],"payload":{"tag":"li","lines":"153,154"}},{"content":"人工智能时代伦理规范，理性使用AI技术","children":[],"payload":{"tag":"li","lines":"154,155"}}],"payload":{"tag":"h3","lines":"150,151"}}],"payload":{"tag":"h2","lines":"146,147"}}],"payload":{"tag":"h1","lines":"0,1"}};
+
+const ICONS = {
+  arrow: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>',
+  plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>',
+  sibling: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="3" x2="12" y2="21"/><line x1="8" y1="7" x2="8" y2="17"/><line x1="16" y1="7" x2="16" y2="17"/></svg>',
+  trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>',
+};
+
+let data = null;
+let expanded = new Set();
+let autoExpand = new Set();
+let searchTerm = '';
+let idCounter = 0;
+
+const treeEl = document.getElementById('tree');
+
+function normalize(node, parentId) {
+  node._id = 'n' + (++idCounter);
+  node._parentId = parentId || null;
+  node.children = node.children || [];
+  node.children.forEach(c => normalize(c, node._id));
+  return node;
+}
+function strip(node) {
+  const out = { content: node.content, children: node.children.map(strip) };
+  if (node.payload) out.payload = node.payload;
+  return out;
+}
+function findById(node, id) {
+  if (node._id === id) return node;
+  for (const c of node.children) {
+    const r = findById(c, id);
+    if (r) return r;
+  }
+  return null;
+}
+function findParent(node, id) {
+  for (const c of node.children) {
+    if (c._id === id) return node;
+    const r = findParent(c, id);
+    if (r) return r;
+  }
+  return null;
+}
+function escapeHtml(s) {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+function escapeRegExp(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+function highlight(text) {
+  const esc = escapeHtml(text);
+  if (!searchTerm) return esc;
+  const term = escapeHtml(searchTerm);
+  if (!term) return esc;
+  const re = new RegExp('(' + escapeRegExp(term) + ')', 'gi');
+  return esc.replace(re, '<mark>$1</mark>');
+}
+function subtreeHas(node) {
+  if (node.content.toLowerCase().includes(searchTerm)) return true;
+  return node.children.some(subtreeHas);
+}
+
+function loadData() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) { const parsed = JSON.parse(raw); if (parsed && parsed.content) return normalize(parsed, null); }
+  } catch (e) { /* ignore */ }
+  return normalize(JSON.parse(JSON.stringify(DEFAULT_DATA)), null);
+}
+function saveData() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(strip(data)));
+  } catch (e) { toast('保存失败：' + e.message); return; }
+}
+
+let toastTimer = null;
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2000);
+}
+function confirmDialog(msg, onOk) {
+  document.getElementById('modalMsg').textContent = msg;
+  document.getElementById('modalMask').classList.add('show');
+  const ok = document.getElementById('modalOk');
+  const cancel = document.getElementById('modalCancel');
+  const done = (res) => {
+    document.getElementById('modalMask').classList.remove('show');
+    ok.onclick = null; cancel.onclick = null;
+    if (res) onOk();
+  };
+  ok.onclick = () => done(true);
+  cancel.onclick = () => done(false);
+}
+
+function buildChildren(node, depth) {
+  const wrap = document.createElement('div');
+  wrap.className = 'children';
+  node.children.forEach(c => renderNode(c, depth + 1, wrap));
+  return wrap;
+}
+
+function renderNode(node, depth, container) {
+  const wrap = document.createElement('div');
+  wrap.className = 'node depth-' + depth;
+  wrap.draggable = true;
+  wrap.dataset.id = node._id;
+  wrap.dataset.parentId = node._parentId || 'root';
+
+  if (searchTerm) {
+    if (!subtreeHas(node)) wrap.classList.add('dim');
+    else if (node.content.toLowerCase().includes(searchTerm)) wrap.classList.add('match');
+  }
+
+  const card = document.createElement('div');
+  card.className = 'card';
+
+  if (depth === 1) {
+    const dot = document.createElement('span');
+    dot.className = 'module-dot';
+    card.appendChild(dot);
+  }
+
+  const header = document.createElement('div');
+  header.className = 'card-header';
+
+  const hasChildren = node.children.length > 0;
+  const isExpanded = hasChildren && (expanded.has(node._id) || autoExpand.has(node._id));
+  if (hasChildren) {
+    const tb = document.createElement('button');
+    tb.className = 'toggle-btn' + (isExpanded ? ' expanded' : '');
+    tb.innerHTML = ICONS.arrow;
+    tb.title = isExpanded ? '折叠' : '展开';
+    tb.addEventListener('click', (e) => { e.stopPropagation(); toggleNode(node._id); });
+    header.appendChild(tb);
+  }
+
+  const text = document.createElement('span');
+  text.className = 'card-text';
+  text.innerHTML = highlight(node.content);
+  text.title = '双击编辑';
+  text.addEventListener('dblclick', (e) => { e.stopPropagation(); startEdit(text, node); });
+  header.appendChild(text);
+
+  if (node.payload && node.payload.tag) {
+    const meta = document.createElement('span');
+    meta.className = 'meta-chip';
+    meta.textContent = node.payload.tag + (node.payload.lines ? ' · ' + node.payload.lines : '');
+    header.appendChild(meta);
+  }
+
+  card.appendChild(header);
+
+  const actions = document.createElement('div');
+  actions.className = 'card-actions';
+  const addBtn = document.createElement('button');
+  addBtn.className = 'add-child';
+  addBtn.innerHTML = ICONS.plus;
+  addBtn.title = '添加子项';
+  addBtn.addEventListener('click', (e) => { e.stopPropagation(); addChild(node); });
+  actions.appendChild(addBtn);
+
+  if (depth > 0) {
+    const sibBtn = document.createElement('button');
+    sibBtn.className = 'add-sibling';
+    sibBtn.innerHTML = ICONS.sibling;
+    sibBtn.title = '添加同级';
+    sibBtn.addEventListener('click', (e) => { e.stopPropagation(); addSibling(node); });
+    actions.appendChild(sibBtn);
+  }
+
+  const delBtn = document.createElement('button');
+  delBtn.className = 'del';
+  delBtn.innerHTML = ICONS.trash;
+  delBtn.title = '删除';
+  let confirming = false, confirmTimer = null;
+  delBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (!confirming) {
+      confirming = true;
+      delBtn.classList.add('confirming');
+      delBtn.title = '再次点击确认删除';
+      confirmTimer = setTimeout(() => { confirming = false; delBtn.classList.remove('confirming'); delBtn.title = '删除'; }, 3000);
+    } else {
+      clearTimeout(confirmTimer);
+      deleteNode(node);
+    }
+  });
+  actions.appendChild(delBtn);
+  card.appendChild(actions);
+
+  card.addEventListener('click', (e) => {
+    if (e.target === card || e.target === header || e.target === text) {
+      if (hasChildren) toggleNode(node._id);
+    }
+  });
+
+  wrap.appendChild(card);
+
+  if (hasChildren && isExpanded) {
+    wrap.appendChild(buildChildren(node, depth));
+  }
+
+  wrap.addEventListener('dragstart', onDragStart);
+  wrap.addEventListener('dragover', onDragOver);
+  wrap.addEventListener('dragend', onDragEnd);
+
+  container.appendChild(wrap);
+}
+
+function renderTree() {
+  treeEl.innerHTML = '';
+  const rootWrap = document.createElement('div');
+  rootWrap.className = 'node depth-0 root';
+  rootWrap.dataset.id = data._id;
+  const rootCard = document.createElement('div');
+  rootCard.className = 'root-card';
+  const rootText = document.createElement('span');
+  rootText.className = 'card-text';
+  rootText.innerHTML = highlight(data.content);
+  rootText.addEventListener('dblclick', (e) => { e.stopPropagation(); startEdit(rootText, data); });
+  rootCard.appendChild(rootText);
+
+  const rootActions = document.createElement('div');
+  rootActions.className = 'card-actions';
+  const addRoot = document.createElement('button');
+  addRoot.className = 'add-child';
+  addRoot.innerHTML = ICONS.plus;
+  addRoot.title = '添加子项';
+  addRoot.addEventListener('click', (e) => { e.stopPropagation(); addChild(data); });
+  rootActions.appendChild(addRoot);
+  rootCard.appendChild(rootActions);
+  rootWrap.appendChild(rootCard);
+  treeEl.appendChild(rootWrap);
+
+  const timeline = document.createElement('div');
+  timeline.className = 'timeline';
+  data.children.forEach(c => renderNode(c, 1, timeline));
+  treeEl.appendChild(timeline);
+}
+
+function toggleNode(id) {
+  if (expanded.has(id)) expanded.delete(id); else expanded.add(id);
+  renderTree();
+}
+function startEdit(textEl, node) {
+  if (textEl.dataset.editing) return;
+  const original = node.content;
+  textEl.contentEditable = 'true';
+  textEl.dataset.editing = '1';
+  textEl.focus();
+  const range = document.createRange();
+  range.selectNodeContents(textEl);
+  const sel = window.getSelection();
+  sel.removeAllRanges(); sel.addRange(range);
+
+  const finish = (save) => {
+    if (!textEl.dataset.editing) return;
+    textEl.removeEventListener('keydown', onKey);
+    delete textEl.dataset.editing;
+    textEl.contentEditable = 'false';
+    const val = textEl.textContent.trim();
+    if (save && val && val !== original) { node.content = val; saveData(); }
+    renderTree();
+  };
+  const onKey = (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); finish(true); }
+    else if (e.key === 'Escape') { finish(false); }
+  };
+  textEl.addEventListener('keydown', onKey);
+  textEl.addEventListener('blur', () => finish(true), { once: true });
+}
+function addChild(node) {
+  node.children.push({ content: '新知识点', children: [], payload: { tag: 'li', lines: '' } });
+  expanded.add(node._id);
+  saveData(); renderTree(); toast('已添加子项');
+}
+function addSibling(node) {
+  const parent = findParent(data, node._id);
+  if (!parent) return;
+  const idx = parent.children.findIndex(c => c._id === node._id);
+  parent.children.splice(idx + 1, 0, { content: '新知识点', children: [], payload: { tag: 'li', lines: '' } });
+  if (parent._id) expanded.add(parent._id);
+  saveData(); renderTree(); toast('已添加同级');
+}
+function deleteNode(node) {
+  if (node._id === data._id) { toast('根节点不可删除'); return; }
+  const parent = findParent(data, node._id);
+  if (!parent) return;
+  parent.children = parent.children.filter(c => c._id !== node._id);
+  saveData(); renderTree(); toast('已删除');
+}
+
+let draggingEl = null;
+function onDragStart(e) {
+  draggingEl = e.currentTarget;
+  draggingEl.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+  try { e.dataTransfer.setData('text/plain', draggingEl.dataset.id); } catch (err) {}
+}
+function onDragOver(e) {
+  e.preventDefault();
+  const target = e.currentTarget;
+  if (!draggingEl || target === draggingEl) return;
+  if (target.dataset.parentId !== draggingEl.dataset.parentId) return;
+  e.dataTransfer.dropEffect = 'move';
+  const rect = target.getBoundingClientRect();
+  const after = e.clientY > rect.top + rect.height / 2;
+  if (after) target.after(draggingEl); else target.before(draggingEl);
+}
+function onDragEnd() {
+  if (!draggingEl) return;
+  draggingEl.classList.remove('dragging');
+  const parentId = draggingEl.dataset.parentId;
+  const container = draggingEl.parentElement;
+  const order = Array.from(container.children).map(el => el.dataset.id).filter(Boolean);
+  const parent = parentId === 'root' ? data : findById(data, parentId);
+  if (parent) {
+    parent.children = order.map(id => findById(data, id)).filter(Boolean);
+    saveData();
+  }
+  draggingEl = null;
+  renderTree();
+}
+
+const searchInput = document.getElementById('search');
+searchInput.addEventListener('input', () => {
+  searchTerm = searchInput.value.trim().toLowerCase();
+  autoExpand = new Set();
+  if (searchTerm) {
+    (function collect(node, path) {
+      if (node.content.toLowerCase().includes(searchTerm)) {
+        path.forEach(p => autoExpand.add(p._id));
+      }
+      node.children.forEach(c => collect(c, [...path, node]));
+    })(data, []);
+  }
+  renderTree();
+});
+
+function exportJSON() {
+  const blob = new Blob([JSON.stringify(strip(data), null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'it_knowledge_tree.json';
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+  toast('已导出 JSON');
+}
+function importJSON(obj) {
+  if (!obj || typeof obj.content !== 'string' || !Array.isArray(obj.children)) {
+    toast('无效的数据结构'); return;
+  }
+  data = normalize(obj, null);
+  expanded.clear(); saveData(); renderTree(); toast('导入成功');
+}
+
+document.getElementById('btnSave').onclick = () => { saveData(); toast('已保存到本地'); };
+document.getElementById('btnExport').onclick = exportJSON;
+document.getElementById('btnImport').onclick = () => document.getElementById('fileInput').click();
+document.getElementById('fileInput').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => { try { importJSON(JSON.parse(reader.result)); } catch (err) { toast('JSON 解析失败'); } };
+  reader.readAsText(file);
+  e.target.value = '';
+});
+document.getElementById('btnReset').onclick = () => {
+  confirmDialog('确定要重置为默认数据吗？当前修改将丢失。', () => {
+    data = normalize(JSON.parse(JSON.stringify(DEFAULT_DATA)), null);
+    expanded.clear(); saveData(); renderTree(); toast('已重置默认');
+  });
+};
+
+const dropOverlay = document.getElementById('dropOverlay');
+let dragDepth = 0;
+window.addEventListener('dragenter', (e) => {
+  if (hasFiles(e)) { dragDepth++; dropOverlay.classList.add('show'); }
+});
+window.addEventListener('dragleave', (e) => {
+  if (hasFiles(e)) { dragDepth--; if (dragDepth <= 0) { dragDepth = 0; dropOverlay.classList.remove('show'); } }
+});
+window.addEventListener('dragover', (e) => { if (hasFiles(e)) e.preventDefault(); });
+window.addEventListener('drop', (e) => {
+  if (!hasFiles(e)) return;
+  e.preventDefault();
+  dragDepth = 0; dropOverlay.classList.remove('show');
+  const file = e.dataTransfer.files[0];
+  if (!file || !/\.json$/i.test(file.name)) { toast('请拖入 .json 文件'); return; }
+  const reader = new FileReader();
+  reader.onload = () => { try { importJSON(JSON.parse(reader.result)); } catch (err) { toast('JSON 解析失败'); } };
+  reader.readAsText(file);
+});
+function hasFiles(e) {
+  return e.dataTransfer && Array.from(e.dataTransfer.types || []).includes('Files');
+}
+
+data = loadData();
+renderTree();
+</script>
+</body>
+</html>

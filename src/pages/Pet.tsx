@@ -34,12 +34,16 @@ function FoxModel({ mood, isSpeaking, isDancing }: {
 
   useEffect(() => {
     if (scene) {
-      scene.traverse((child: any) => {
-        if (child.isMesh && child.material) {
-          if (child.material.map) {
-            child.material.map.colorSpace = THREE.SRGBColorSpace;
+      scene.traverse((child) => {
+        if ((child as THREE.Mesh).isMesh) {
+          const mesh = child as THREE.Mesh;
+          if (mesh.material) {
+            const material = mesh.material as THREE.MeshStandardMaterial;
+            if (material.map) {
+              material.map.colorSpace = THREE.SRGBColorSpace;
+            }
+            material.needsUpdate = true;
           }
-          child.material.needsUpdate = true;
         }
       });
     }
@@ -337,7 +341,7 @@ export function Pet() {
       setMessages(prev => [...prev, assistantMessage]);
       setPet(prev => ({ ...prev, happiness: Math.min(100, prev.happiness + 2), totalInteractions: prev.totalInteractions + 1 }));
       setTimeout(() => setIsSpeaking(false), 2000);
-    } catch (error) {
+    } catch {
       const errorMessage: AIMessage = { id: `error-${Date.now()}`, role: 'assistant', content: 'Oops! Something went wrong.', timestamp: Date.now() };
       setMessages(prev => [...prev, errorMessage]);
     } finally {

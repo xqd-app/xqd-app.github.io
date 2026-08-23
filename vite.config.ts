@@ -1,16 +1,17 @@
-import { defineConfig } from 'vite'
+import { defineConfig, ViteDevServer } from 'vite'
 import react from '@vitejs/plugin-react'
 import tsconfigPaths from "vite-tsconfig-paths";
 import { traeBadgePlugin } from 'vite-plugin-trae-solo-badge';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import type { IncomingMessage, ServerResponse } from 'node:http';
 
 // 开发服务器中间件：接收上传的班级表格并保存到 data/Random Roll Call List
 const saveClassFilePlugin = {
   name: 'save-class-file',
-  configureServer(server: any) {
-    server.middlewares.use('/api/save-class-file', async (req: any, res: any) => {
+  configureServer(server: ViteDevServer) {
+    server.middlewares.use('/api/save-class-file', async (req: IncomingMessage, res: ServerResponse) => {
       if (req.method !== 'POST') {
         res.statusCode = 405;
         res.setHeader('Content-Type', 'application/json');
@@ -20,7 +21,7 @@ const saveClassFilePlugin = {
       try {
         const chunks: Buffer[] = [];
         for await (const chunk of req) {
-          chunks.push(Buffer.from(chunk));
+          chunks.push(Buffer.from(chunk as Uint8Array));
         }
         const buffer = Buffer.concat(chunks);
 
@@ -40,10 +41,10 @@ const saveClassFilePlugin = {
         res.statusCode = 200;
         res.setHeader('Content-Type', 'application/json');
         res.end(JSON.stringify({ success: true, path: savePath, filename: saveName }));
-      } catch (err: any) {
+      } catch (err) {
         res.statusCode = 500;
         res.setHeader('Content-Type', 'application/json');
-        res.end(JSON.stringify({ success: false, error: err?.message || '保存失败' }));
+        res.end(JSON.stringify({ success: false, error: err instanceof Error ? err.message : '保存失败' }));
       }
     });
   },
