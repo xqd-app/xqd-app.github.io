@@ -809,7 +809,14 @@ function loadTree(): MindNode {
   try {
     const version = localStorage.getItem(STORAGE_KEY + '_version');
     const data = localStorage.getItem(STORAGE_KEY);
-    if (data && version === String(STORAGE_VERSION)) return JSON.parse(data);
+    if (data && version === String(STORAGE_VERSION)) {
+      const parsed: unknown = JSON.parse(data);
+      // 校验形状：null / 缺 children 的脏数据会让组件初始化直接崩
+      if (parsed && typeof parsed === 'object') {
+        const node = parsed as MindNode;
+        if (typeof node.id === 'string' && Array.isArray(node.children)) return node;
+      }
+    }
   } catch { /* ignore */ }
   return defaultTree;
 }
@@ -947,7 +954,7 @@ function layerStyle(level: number, isDark: boolean): LayerStyle {
 }
 
 // Root uses inline gradient instead of Tailwind arbitrary
-function rootBgStyle(isDark: boolean) {
+function rootBgStyle() {
   return { background: 'linear-gradient(135deg,#7c3aed 0%,#c026d3 45%,#ec4899 100%)' };
 }
 
@@ -1030,7 +1037,7 @@ function NodeCard({ node, level, editing, hasChildren, collapsed, onToggle, onAd
       }
       style={
         level === 0
-          ? { ...rootBgStyle(isDark), boxShadow: '0 10px 40px -8px ' + ls.glow + ', 0 4px 20px -4px ' + ls.glow }
+          ? { ...rootBgStyle(), boxShadow: '0 10px 40px -8px ' + ls.glow + ', 0 4px 20px -4px ' + ls.glow }
           : {
               // left accent stripe via inset box-shadow or pseudo
               position: 'relative',
@@ -1163,9 +1170,9 @@ function TreeNode(p: TreeNodeProps) {
     <li
       className={levelClass}
       style={{
-        ['--lc' as any]: lineStyle,
-        ['--lc-glow' as any]: lineGlow,
-      }}
+        '--lc': lineStyle,
+        '--lc-glow': lineGlow,
+      } as React.CSSProperties}
     >
       <NodeCard
         node={p.node}
@@ -1233,8 +1240,12 @@ function MindMapCore({ showClose, onClose, extraHeaderRight }: MindMapCoreProps)
   }, []);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(tree));
-    localStorage.setItem(STORAGE_KEY + '_version', String(STORAGE_VERSION));
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(tree));
+      localStorage.setItem(STORAGE_KEY + '_version', String(STORAGE_VERSION));
+    } catch {
+      // 隐私模式/配额超限：忽略写入失败，避免 effect 抛错导致白屏
+    }
   }, [tree]);
 
   useEffect(() => {

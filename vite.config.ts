@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react'
 import tsconfigPaths from "vite-tsconfig-paths";
 import { traeBadgePlugin } from 'vite-plugin-trae-solo-badge';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 
@@ -50,8 +50,27 @@ const saveClassFilePlugin = {
   },
 };
 
+// 构建后把 index.html 复制为 404.html：
+// GitHub Pages 等静态托管在访问 /photo/1 这类深层链接时没有回退，会直接 404；
+// 有了 404.html 后浏览器仍会以 404 状态码加载该页面，React Router 便能接管路由。
+const spaFallbackPlugin = {
+  name: 'spa-fallback-404',
+  apply: 'build' as const,
+  closeBundle: async () => {
+    const distDir = join(process.cwd(), 'dist');
+    try {
+      const html = await readFile(join(distDir, 'index.html'), 'utf8');
+      await writeFile(join(distDir, '404.html'), html);
+    } catch (err) {
+      console.warn('[spa-fallback-404] 生成 404.html 失败:', err);
+    }
+  },
+};
+
 export default defineConfig({
-  base: '', // 空字符串确保路由正确
+  // 必须使用绝对路径 '/'：相对路径 './assets/...' 在 /photo/1 这类深层链接下
+  // 会被解析成 /photo/assets/...，导致脚本 404、整页白屏。
+  base: '/',
   build: {
     sourcemap: 'hidden',
     assetsInclude: ['**/*.jpg', '**/*.jpeg', '**/*.png', '**/*.gif', '**/*.pdf'],
@@ -80,6 +99,7 @@ export default defineConfig({
     }),
     tsconfigPaths(),
     saveClassFilePlugin,
+    spaFallbackPlugin,
     viteStaticCopy({
       targets: [
         {

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { ArrowLeft, Lock, Eye, EyeOff, Upload, Trash2, Users, Play, Pause, RotateCcw, X, FileSpreadsheet, ChevronDown, ChevronRight, UserCheck, Sparkles, Network, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Lock, Eye, EyeOff, Upload, Trash2, Users, Play, Pause, RotateCcw, X, FileSpreadsheet, ChevronDown, ChevronRight, UserCheck, Sparkles, Network, ExternalLink, BookOpen } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import * as XLSX from 'xlsx';
 import { MindMapModal } from '@/components/MindMapModal';
@@ -18,14 +18,34 @@ const STORAGE_KEY = 'teacher_classes_data';
 function loadClasses(): ClassData[] {
   try {
     const data = localStorage.getItem(STORAGE_KEY);
-    return data ? JSON.parse(data) : [];
+    if (!data) return [];
+    const parsed: unknown = JSON.parse(data);
+    // 校验形状：数据被手改/旧版本残留成 {} / null 时不能直接 map，否则整页白屏
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .filter(
+        (cls): cls is ClassData =>
+          !!cls &&
+          typeof cls === 'object' &&
+          typeof (cls as ClassData).id === 'string' &&
+          typeof (cls as ClassData).name === 'string' &&
+          Array.isArray((cls as ClassData).students),
+      )
+      .map((cls) => ({
+        ...cls,
+        students: cls.students.filter((s): s is string => typeof s === 'string'),
+      }));
   } catch {
     return [];
   }
 }
 
 function saveClasses(classes: ClassData[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(classes));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(classes));
+  } catch {
+    // 隐私模式/配额超限时忽略，不影响页面继续使用
+  }
 }
 
 export function Teacher() {
@@ -444,6 +464,13 @@ export function Teacher() {
             <span>返回首页</span>
           </button>
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => navigate('/quiz?subject=general')}
+              className="flex items-center gap-2 px-4 py-2 text-sm bg-gradient-to-r from-emerald-600 to-emerald-500 text-white rounded-lg hover:from-emerald-700 hover:to-emerald-600 transition-all shadow-lg shadow-emerald-600/30"
+            >
+              <BookOpen size={16} />
+              <span>做题训练</span>
+            </button>
             <button
               onClick={() => navigate('/mindmap')}
               className="flex items-center gap-2 px-4 py-2 text-sm bg-gradient-to-r from-slate-700 to-slate-600 text-white rounded-lg hover:from-slate-800 hover:to-slate-700 transition-all shadow-lg shadow-slate-600/30 group"

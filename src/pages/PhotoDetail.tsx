@@ -6,7 +6,7 @@ const naturalSceneryPhotos = [
   { id: 1, src: '/data/living1/Scenery 1/Natural Scenery/微信图片_20260526100911_126_244.jpg', title: '自然风光 1' },
   { id: 2, src: '/data/living1/Scenery 1/Natural Scenery/微信图片_20260526100914_127_244.jpg', title: '自然风光 2' },
   { id: 3, src: '/data/living1/Scenery 1/Natural Scenery/微信图片_20260526100924_128_244.jpg', title: '自然风光 3' },
-  { id: 4, src: '/data/living1/Scenery 1/Natural Scenery/微信图片_20260526100935_132_244.jpg', title: '自然风光 4' },
+  { id: 4, src: '/data/living1/Scenery 1/微信图片_20260526100941_133_244.jpg', title: '自然风光 4' },
   { id: 5, src: '/data/living1/Scenery 1/Natural Scenery/微信图片_20260526100943_134_244.jpg', title: '自然风光 5' },
   { id: 6, src: '/data/living1/Scenery 1/Natural Scenery/微信图片_20260526101014_137_244.jpg', title: '自然风光 6' },
 ];

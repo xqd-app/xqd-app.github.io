@@ -225,7 +225,7 @@ export const bio = {
     {
       degree: "工学学士 / Bachelor of Engineering",
       major: "智能科学与技术 / Intelligent Science and Technology",
-      school: "昆明文理学院 / Kunming College of Arts and Sciences",
+      school: "云南师范大学昆明文理学院 / Kunming College of Arts and Sciences",
       period: "2024 - 2026"
     }
   ]

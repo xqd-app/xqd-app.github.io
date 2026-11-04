@@ -4,6 +4,32 @@ import { AIMessage, AIConfig, AI_PROVIDERS } from '@/lib/ai-service';
 import { useTheme } from '@/hooks/useTheme';
 import { cn } from '@/lib/utils';
 
+interface SpeechRecognitionResultLike {
+  transcript: string;
+}
+
+interface SpeechRecognitionEventLike {
+  results: ArrayLike<ArrayLike<SpeechRecognitionResultLike>>;
+}
+
+interface SpeechRecognitionLike {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  onresult: ((event: SpeechRecognitionEventLike) => void) | null;
+  onend: (() => void) | null;
+  onerror: (() => void) | null;
+  start: () => void;
+  stop: () => void;
+}
+
+type SpeechRecognitionCtor = new () => SpeechRecognitionLike;
+
+interface SpeechWindow {
+  SpeechRecognition?: SpeechRecognitionCtor;
+  webkitSpeechRecognition?: SpeechRecognitionCtor;
+}
+
 interface AIChatProps {
   messages: AIMessage[];
   onSendMessage: (content: string) => void;
@@ -24,7 +50,7 @@ export function AIChat({ messages, onSendMessage, onConfigChange, config, isLoad
   const [isListening, setIsListening] = useState(false);
   const [isSpeakingEnabled, setIsSpeakingEnabled] = useState(true);
   const [speechSupported, setSpeechSupported] = useState(false);
-  const recognitionRef = useRef<any>(null);
+  const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -32,9 +58,10 @@ export function AIChat({ messages, onSendMessage, onConfigChange, config, isLoad
 
   // Initialize speech recognition
   useEffect(() => {
-    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+    const speechWindow = window as unknown as SpeechWindow;
+    if (speechWindow.SpeechRecognition || speechWindow.webkitSpeechRecognition) {
       setSpeechSupported(true);
-      const SpeechRecognitionAPI = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      const SpeechRecognitionAPI = speechWindow.SpeechRecognition || speechWindow.webkitSpeechRecognition;
 
       if (SpeechRecognitionAPI) {
         recognitionRef.current = new SpeechRecognitionAPI();
@@ -42,7 +69,7 @@ export function AIChat({ messages, onSendMessage, onConfigChange, config, isLoad
         recognitionRef.current.interimResults = true;
         recognitionRef.current.lang = 'en-US';
 
-        recognitionRef.current.onresult = (event: any) => {
+        recognitionRef.current.onresult = (event: SpeechRecognitionEventLike) => {
           const transcript = event.results[0][0].transcript;
           setInput(transcript);
         };
