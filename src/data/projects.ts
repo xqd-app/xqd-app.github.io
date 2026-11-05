@@ -85,45 +85,46 @@ export interface Experience {
 export const experiences: Experience[] = [
   {
     id: "1",
-    role: "高级产品设计师 / Senior Product Designer",
-    company: "谷歌（通过代理）/ Google (via agencies)",
-    period: "2024 - 2025",
+    role: "独立开发 / Independent Developer",
+    company: "学生成绩数据分析管理系统 / Student Grade Analysis & Management System",
+    period: "2024.08 - 2024.10",
     highlights: [
-      "设计员工支持AI聊天界面 / Designed AI chat interface for employee support",
-      "基于Material 3构建设计系统 / Built design system based on Material 3",
-      "创建带动画logo的内部品牌标识 / Created internal brand identity with animated logo"
+      "承接校内教务需求，面向多班级多课程的成绩统计与可视化 / Built for on-campus academic affairs, covering multi-class and multi-course grade statistics and visualization",
+      "设计可扩展的成绩统计模块，用 Python 自动计算平均分、排名、挂科率并可视化，替代人工 Excel 汇总 / Designed an extensible statistics module in Python for averages, rankings and failure rates, replacing manual Excel summaries",
+      "覆盖 3 个班级 150+ 名学生，成绩分析耗时缩短 60%，成果在班级与任课教师中实际使用 / Covered 3 classes and 150+ students, cut grade analysis time by 60%, adopted by classes and instructors"
     ]
   },
   {
     id: "2",
-    role: "高级网页设计师 / Senior Web Designer",
-    company: "dbt Labs",
-    period: "2023 - 2024",
+    role: "项目成员 / Project Member",
+    company: "旭腾 · 某医院安防预设项目 / Xuteng · Hospital Security System Project",
+    period: "2025.06 - 2025.07",
     highlights: [
-      "42亿美元初创公司的唯一网页设计师 / Sole web designer for $4.2B startup",
-      "开发和维护网页设计系统 / Developed and maintained Web Design System",
-      "设计网站品牌更新 / Designed website brand update"
+      "为监控、门禁、机器人子系统搭建数据安全底座，可拆成「信息安全」单元教学案例 / Built the data security foundation for surveillance, access-control and robotics subsystems, usable as an Information Security teaching case",
+      "完成安防系统数据安全建设落地：为各子系统划分独立 VLAN，阻断跨子系统横向访问 / Delivered the security build-out: segmented independent VLANs per subsystem to block lateral access",
+      "部署核心层 NGFW 并开启入侵检测与病毒防护，落实 SSL/TLS 传输加密与 AES-256 存储加密 / Deployed core-layer NGFW with intrusion detection and antivirus, enforcing SSL/TLS in transit and AES-256 at rest"
     ]
   },
   {
     id: "3",
-    role: "高级设计师 / Senior Designer",
-    company: "Nymbus",
-    period: "2020 - 2022",
+    role: "前端开发 / Frontend Developer",
+    company: "滇同学智慧系统 / Dian Tongxue Smart System",
+    period: "2025.01 - 2025.06",
     highlights: [
-      "设计完整品牌包括logo和UI/UX / Designed full brands including logos and UI/UX",
-      "带来超过75万美元的新业务 / Brought over $750,000 in new business",
-      "作为DEIB董事会成员领导骄傲计划 / Led Pride initiatives as DEIB board member"
+      "为昆明百味珍食品有限公司开发多前台电商管理系统，覆盖 Web 与桌面双端 / Built a multi-storefront e-commerce management system for Kunming Baiweizhen Food Co., covering both web and desktop",
+      "基于 React + TypeScript + Vite 搭建多前台页面，用 Electron 打包桌面端，一套代码双端交付 / Built multi-storefront pages with React + TypeScript + Vite and packaged the desktop app with Electron, delivering both from one codebase",
+      "以 Ant Design 统一交互规范，将重复表单与列表抽象为可复用组件，保持多端体验一致 / Standardized interactions with Ant Design and extracted reusable form and list components for a consistent multi-end experience"
     ]
   },
   {
     id: "4",
-    role: "平面设计师 / Graphic Designer",
-    company: "Armature Works",
-    period: "2019 - 2020",
+    role: "数据分析 / Data Analyst",
+    company: "贝壳租房 APP（昆明区域）数据分析 / Beike Rental App (Kunming) Data Analysis",
+    period: "2024.12 - 2025.01",
     highlights: [
-      "为20个餐厅概念创建印刷和数字材料 / Created print and digital materials for 20 restaurant concepts",
-      "设计收集5000封邮件的WiFi落地页 / Designed WiFi landing page collecting 5,000 emails"
+      "分析昆明租房市场供需关系与用户行为特征，输出可落地的业务建议 / Analyzed supply-demand dynamics and user behavior in Kunming's rental market, delivering actionable business recommendations",
+      "用 Python 自定义函数统一格式并填充缺失值，清洗 5 万条数据、剔除无效 1200+ 条，准确性提升 15% / Cleaned 50,000 records with custom Python functions for formatting and missing values, removed 1,200+ invalid entries and improved accuracy by 15%",
+      "用 matplotlib 绘制区域租金热力图与户型偏好分布，识别 3 个高需求缺口区域，输出选址与定价建议 / Visualized rent heatmaps and unit-type preferences with matplotlib, identified 3 high-demand gap areas and produced site-selection and pricing advice"
     ]
   }
 ];
